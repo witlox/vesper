@@ -1,0 +1,245 @@
+node_id: payment_handler_v1
+type: http_handler
+intent: process_credit_card_payment
+
+metadata:
+  author: vesper-team
+  created: 2025-01-08T10:00:00Z
+  version: 1.0.0
+  description: |
+    Processes credit card payments through a payment provider.
+    Demonstrates complex flow with external API calls, database operations,
+    and comprehensive error handling.
+  tags: [example, payments, intermediate, api]
+  dependencies:
+    - user_service_v1
+    - ledger_service_v1
+
+inputs:
+  order_id:
+    type: string
+    required: true
+    constraints:
+      - non_empty
+      - pattern: "^ord_[a-zA-Z0-9]{16}$"
+    description: Unique order identifier
+
+  amount:
+    type: decimal
+    required: true
+    constraints:
+      - positive
+      - max: 50000.00
+    description: Payment amount in USD
+
+  user_id:
+    type: string
+    required: true
+    constraints:
+      - non_empty
+    description: User making the payment
+
+  idempotency_key:
+    type: string
+    required: false
+    default: null
+    description: Optional key for idempotent requests
+
+outputs:
+  success:
+    transaction_id:
+      type: string
+      description: Unique transaction identifier
+    status:
+      type: enum
+      values: [completed, pending, processing]
+    amount_charged:
+      type: decimal
+    timestamp:
+      type: timestamp
+
+  error:
+    error_code:
+      type: enum
+      values: [insufficient_funds, invalid_card, expired_card,
+               network_timeout, service_unavailable, validation_failed]
+    message:
+      type: string
+    retry_after_seconds:
+      type: integer
+      required: false
+
+contracts:
+  preconditions:
+    - "amount > 0"
+    - "amount <= 50000"
+    - "order_id != ''"
+    - "user_id != ''"
+
+  postconditions:
+    - "transaction.recorded OR error.logged"
+
+  invariants:
+    - "user.balance >= 0"
+
+flow:
+  - step: validate_request
+    operation: validation
+    description: Validate input parameters
+    guards:
+      - "amount > 0"
+      - "amount <= 50000"
+    on_failure:
+      return_error:
+        error_code: validation_failed
+        message: "Invalid payment amount"
+
+  - step: check_idempotency
+    operation: conditional
+    description: Check if this is a duplicate request
+    condition: "idempotency_key IS NOT NULL"
+    then:
+      - step: lookup_existing
+        operation: database_query
+        query: "SELECT transaction_id FROM transactions WHERE idempotency_key = {idempotency_key}"
+        on_result:
+          if_found:
+            return_success:
+              transaction_id: "{query_result.transaction_id}"
+              status: completed
+
+  - step: call_payment_provider
+    operation: external_api_call
+    description: Process payment through provider
+    provider: stripe
+    endpoint: /v1/charges
+    method: POST
+    parameters:
+      amount: "{amount}"
+      currency: usd
+      user_id: "{user_id}"
+      idempotency_key: "{idempotency_key}"
+    timeout: 30s
+    retry_policy:
+      max_attempts: 3
+      backoff: exponential
+      initial_delay: 1s
+    on_success:
+      extract:
+        transaction_id: "{response.id}"
+        status: completed
+    on_error:
+      - error_type: card_declined
+        return_error:
+          error_code: insufficient_funds
+          message: "Card was declined"
+      - error_type: timeout
+        return_error:
+          error_code: network_timeout
+          message: "Payment provider timeout"
+
+  - step: record_transaction
+    operation: database_write
+    description: Record the transaction in our database
+    table: transactions
+    data:
+      transaction_id: "{transaction_id}"
+      order_id: "{order_id}"
+      user_id: "{user_id}"
+      amount: "{amount}"
+      status: "{status}"
+      idempotency_key: "{idempotency_key}"
+      created_at: "{current_timestamp()}"
+    consistency: strong
+
+  - step: return_success
+    operation: return
+    return_success:
+      transaction_id: "{transaction_id}"
+      status: "{status}"
+      amount_charged: "{amount}"
+      timestamp: "{current_timestamp()}"
+
+error_handling:
+  insufficient_funds:
+    action: return_error
+    notify: user
+    log_level: info
+
+  network_timeout:
+    action: retry
+    max_retries: 3
+    notify: ops_team
+    log_level: error
+
+  service_unavailable:
+    action: circuit_breaker
+    threshold: 5
+    timeout: 60s
+    notify: ops_team
+    log_level: critical
+
+performance:
+  expected_latency_ms: 200
+  p99_latency_ms: 500
+  max_latency_ms: 2000
+  timeout_seconds: 30
+
+security:
+  capabilities_required:
+    - database.write.transactions
+    - network.http_client.stripe.com
+    - secrets.read.stripe_api_key
+
+  denied_capabilities:
+    - filesystem.write
+    - exec.shell_command
+
+  sensitive_data:
+    - user.payment_method
+
+  audit_level: detailed
+
+observability:
+  metrics:
+    - name: payment_success_rate
+      type: counter
+      labels: [status]
+    - name: payment_latency_ms
+      type: histogram
+      buckets: [50, 100, 200, 500, 1000]
+
+  alerts:
+    - condition: "payment_success_rate < 0.95"
+      severity: warning
+      notify: [ops_team]
+
+  tracing:
+    enabled: true
+    sample_rate: 0.1
+
+  logging:
+    level: info
+    structured: true
+    include_request_id: true
+
+testing:
+  test_cases:
+    - name: successful_payment
+      inputs:
+        order_id: ord_test123456789012
+        amount: 99.99
+        user_id: user_123
+      expected_output:
+        success: true
+        status: completed
+
+    - name: amount_too_high
+      inputs:
+        order_id: ord_test123456789013
+        amount: 100000.00
+        user_id: user_123
+      expected_output:
+        success: false
+        error_code: validation_failed
+

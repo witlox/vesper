@@ -1,0 +1,17 @@
+[package]
+name = "vesper_jit"
+description = "JIT compiler for Vesper specifications"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+vesper_core = { path = "../vesper_core" }
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+# JIT compilation dependencies (placeholder for LLVM)
+# inkwell = "0.2"  # LLVM bindings - uncomment when implementing JIT
+

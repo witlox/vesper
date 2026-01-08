@@ -131,8 +131,6 @@ This project explores several open questions:
 4. **How do we maintain debuggability without human-readable code?**
 5. **Can semantic specifications enable automatic optimization based on runtime behavior?**
 
-See our [Research Agenda](docs/RESEARCH_AGENDA.md) for details.
-
 ## Inspiration & Related Work
 
 - **LLVM IR** - Proven intermediate representation for compilers

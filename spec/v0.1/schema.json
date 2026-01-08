@@ -1,0 +1,234 @@
+{
+}
+  }
+    }
+      }
+        "notify": {"type": "array", "items": {"type": "string"}}
+        "severity": {"type": "string", "enum": ["info", "warning", "error", "critical"]},
+        "condition": {"type": "string"},
+      "properties": {
+      "required": ["condition", "severity"],
+      "type": "object",
+    "alert": {
+    },
+      }
+        "buckets": {"type": "array", "items": {"type": "number"}}
+        "labels": {"type": "array", "items": {"type": "string"}},
+        "type": {"type": "string", "enum": ["counter", "gauge", "histogram"]},
+        "name": {"type": "string"},
+      "properties": {
+      "required": ["name", "type"],
+      "type": "object",
+    "metric": {
+    },
+      }
+        "retry_policy": {"type": "object"}
+        "timeout": {"type": "string"},
+        "output": {"type": "string"},
+        "expression": {"type": "string"},
+        "template": {"type": "string"},
+        "on_result": {"type": "object"},
+        "on_failure": {"type": "object"},
+        "on_error": {"type": ["object", "array"]},
+        "on_success": {"type": "object"},
+        "else": {"type": "array"},
+        "then": {"type": "array"},
+        "condition": {"type": "string"},
+        "guards": {"type": "array", "items": {"type": "string"}},
+        "parameters": {"type": "object"},
+        "description": {"type": "string"},
+        "operation": {"type": "string"},
+        "step": {"type": "string"},
+      "properties": {
+      "required": ["step", "operation"],
+      "type": "object",
+    "flowStep": {
+    },
+      }
+        "constraints": {"type": "array", "items": {"type": "string"}}
+        "fields": {"type": "object"},
+        "base": {"type": "string"},
+      "properties": {
+      "type": "object",
+    "customType": {
+    },
+      }
+        "description": {"type": "string"}
+        "default": {},
+        "constraints": {"type": "array", "items": {"type": "string"}},
+        "required": {"type": "boolean", "default": true},
+        "type": {"type": "string"},
+      "properties": {
+      "required": ["type"],
+      "type": "object",
+    "inputSpec": {
+    },
+      }
+        "type": {"type": "string"}
+      "properties": {
+      "required": ["type"],
+      "type": "object",
+    "simpleType": {
+  "definitions": {
+  },
+    }
+      }
+        "migration_notes": {"type": "string"}
+        "related_nodes": {"type": "array", "items": {"type": "string"}},
+        "examples": {"type": "array"},
+      "properties": {
+      "type": "object",
+    "documentation": {
+    },
+      }
+        }
+          }
+            "sample_size": {"type": "integer"}
+            "enabled": {"type": "boolean"},
+          "properties": {
+          "type": "object",
+        "differential_tests": {
+        "test_cases": {"type": "array"},
+        "property_tests": {"type": "array"},
+      "properties": {
+      "type": "object",
+    "testing": {
+    },
+      }
+        }
+          }
+            "include_request_id": {"type": "boolean"}
+            "structured": {"type": "boolean"},
+            "level": {"type": "string", "enum": ["debug", "info", "warning", "error"]},
+          "properties": {
+          "type": "object",
+        "logging": {
+        },
+          }
+            "sample_rate": {"type": "number"}
+            "enabled": {"type": "boolean"},
+          "properties": {
+          "type": "object",
+        "tracing": {
+        "alerts": {"type": "array", "items": {"$ref": "#/definitions/alert"}},
+        "metrics": {"type": "array", "items": {"$ref": "#/definitions/metric"}},
+      "properties": {
+      "type": "object",
+    "observability": {
+    },
+      }
+        "compliance": {"type": "array", "items": {"type": "string"}}
+        "audit_level": {"type": "string", "enum": ["none", "basic", "detailed"]},
+        "sensitive_data": {"type": "array", "items": {"type": "string"}},
+        "denied_capabilities": {"type": "array", "items": {"type": "string"}},
+        "capabilities_required": {"type": "array", "items": {"type": "string"}},
+      "properties": {
+      "type": "object",
+    "security": {
+    },
+      }
+        }
+          }
+            "global": {"type": "string"}
+            "per_user": {"type": "string"},
+          "properties": {
+          "type": "object",
+        "rate_limit": {
+        "timeout_seconds": {"type": "integer"},
+        "cpu_limit_cores": {"type": "number"},
+        "memory_limit_mb": {"type": "integer"},
+        "max_latency_ms": {"type": "integer"},
+        "p99_latency_ms": {"type": "integer"},
+        "expected_latency_ms": {"type": "integer"},
+      "properties": {
+      "type": "object",
+    "performance": {
+    },
+      }
+        }
+          "log_level": {"type": "string"}
+          "notify": {"type": ["string", "array"]},
+          "action": {"type": "string"},
+        "properties": {
+        "type": "object",
+      "additionalProperties": {
+      "type": "object",
+    "error_handling": {
+    },
+      "items": {"$ref": "#/definitions/flowStep"}
+      "type": "array",
+    "flow": {
+    },
+      }
+        "invariants": {"type": "array", "items": {"type": "string"}}
+        "postconditions": {"type": "array", "items": {"type": "string"}},
+        "preconditions": {"type": "array", "items": {"type": "string"}},
+      "properties": {
+      "type": "object",
+    "contracts": {
+    },
+      }
+        "$ref": "#/definitions/customType"
+      "additionalProperties": {
+      "type": "object",
+    "types": {
+    },
+      }
+        "error": {"type": "object"}
+        "success": {"type": "object"},
+      "properties": {
+      "type": "object",
+    "outputs": {
+    },
+      }
+        ]
+          {"$ref": "#/definitions/simpleType"}
+          {"$ref": "#/definitions/inputSpec"},
+        "oneOf": [
+      "additionalProperties": {
+      "type": "object",
+    "inputs": {
+    },
+      }
+        }
+          }
+            }
+              "changes": {"type": "string"}
+              "date": {"type": "string"},
+              "version": {"type": "string"},
+            "properties": {
+            "type": "object",
+          "items": {
+          "type": "array",
+        "changelog": {
+        "dependencies": {"type": "array", "items": {"type": "string"}},
+        "tags": {"type": "array", "items": {"type": "string"}},
+        "description": {"type": "string"},
+        "version": {"type": "string"},
+        "created": {"type": "string", "format": "date-time"},
+        "author": {"type": "string"},
+      "properties": {
+      "type": "object",
+    "metadata": {
+    },
+      "description": "High-level purpose in plain English"
+      "type": "string",
+    "intent": {
+    },
+      "description": "Category of semantic node"
+      "enum": ["function", "http_handler", "event_handler", "data_transform", "state_machine", "aggregation", "scheduled_job"],
+      "type": "string",
+    "type": {
+    },
+      "description": "Unique versioned identifier for this node"
+      "pattern": "^[a-z_]+_v[0-9]+(\\.[0-9]+)*$",
+      "type": "string",
+    "node_id": {
+  "properties": {
+  "required": ["node_id", "type", "intent", "inputs", "outputs", "flow"],
+  "type": "object",
+  "description": "Schema for Vesper semantic specification files (.vsp)",
+  "title": "Vesper Specification v0.1",
+  "$id": "https://github.com/witlox/vesper/spec/v0.1/schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+

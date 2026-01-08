@@ -1,0 +1,73 @@
+node_id: hello_world_v1
+type: function
+intent: greet_user
+
+metadata:
+  author: vesper-team
+  created: 2025-01-08T10:00:00Z
+  version: 1.0.0
+  description: A simple greeting function to demonstrate Vesper basics
+  tags: [example, hello-world, beginner]
+
+inputs:
+  name:
+    type: string
+    required: true
+    constraints:
+      - non_empty
+    description: The name of the person to greet
+
+outputs:
+  success:
+    message:
+      type: string
+      description: The greeting message
+  error:
+    error_code:
+      type: enum
+      values: [invalid_name]
+    message:
+      type: string
+
+contracts:
+  preconditions:
+    - "name != ''"
+  postconditions:
+    - "message CONTAINS name"
+
+flow:
+  - step: validate_name
+    operation: validation
+    guards:
+      - "name != ''"
+    on_failure:
+      return_error:
+        error_code: invalid_name
+        message: "Name cannot be empty"
+
+  - step: generate_greeting
+    operation: string_template
+    template: "Hello, {name}! Welcome to Vesper."
+    output: message
+
+  - step: return_result
+    operation: return
+    return_success:
+      message: "{message}"
+
+testing:
+  test_cases:
+    - name: greet_alice
+      inputs:
+        name: Alice
+      expected_output:
+        success: true
+        message: "Hello, Alice! Welcome to Vesper."
+
+    - name: greet_bob
+      inputs:
+        name: Bob
+      expected_output:
+        success: true
+        message: "Hello, Bob! Welcome to Vesper."
+

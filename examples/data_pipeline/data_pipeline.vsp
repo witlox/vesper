@@ -1,0 +1,194 @@
+node_id: data_pipeline_v1
+type: data_transform
+intent: transform_and_aggregate_sales_data
+
+metadata:
+  author: vesper-team
+  created: 2025-01-08T10:00:00Z
+  version: 1.0.0
+  description: |
+    A data transformation pipeline that processes sales records,
+    filters by date range, aggregates by category, and outputs
+    summary statistics.
+  tags: [example, data, pipeline, etl]
+
+inputs:
+  records:
+    type: array<SalesRecord>
+    required: true
+    description: Array of sales records to process
+
+  start_date:
+    type: timestamp
+    required: true
+    description: Start of date range filter
+
+  end_date:
+    type: timestamp
+    required: true
+    description: End of date range filter
+
+  min_amount:
+    type: decimal
+    required: false
+    default: 0.0
+    description: Minimum sale amount to include
+
+outputs:
+  success:
+    summary:
+      type: PipelineSummary
+      description: Aggregated pipeline output
+    record_count:
+      type: integer
+      description: Number of records processed
+    categories:
+      type: array<CategorySummary>
+      description: Per-category summaries
+
+  error:
+    error_code:
+      type: enum
+      values: [no_data, invalid_date_range, processing_error]
+    message:
+      type: string
+
+types:
+  SalesRecord:
+    fields:
+      id: {type: string}
+      amount: {type: decimal}
+      category: {type: string}
+      timestamp: {type: timestamp}
+      region: {type: string}
+
+  CategorySummary:
+    fields:
+      category: {type: string}
+      total_sales: {type: decimal}
+      count: {type: integer}
+      average: {type: decimal}
+
+  PipelineSummary:
+    fields:
+      total_sales: {type: decimal}
+      total_records: {type: integer}
+      date_range_start: {type: timestamp}
+      date_range_end: {type: timestamp}
+
+contracts:
+  preconditions:
+    - "start_date <= end_date"
+    - "min_amount >= 0"
+
+  postconditions:
+    - "summary.total_records >= 0"
+    - "summary.total_sales >= 0"
+
+  invariants:
+    - "FORALL category IN categories: category.average == category.total_sales / category.count"
+
+flow:
+  - step: validate_date_range
+    operation: validation
+    description: Ensure date range is valid
+    guards:
+      - "start_date <= end_date"
+    on_failure:
+      return_error:
+        error_code: invalid_date_range
+        message: "Start date must be before or equal to end date"
+
+  - step: filter_by_date
+    operation: data_transform
+    description: Filter records within date range
+    input: records
+    transform: filter
+    function: "record.timestamp >= start_date AND record.timestamp <= end_date"
+    output: date_filtered_records
+
+  - step: filter_by_amount
+    operation: data_transform
+    description: Filter records above minimum amount
+    input: date_filtered_records
+    transform: filter
+    function: "record.amount >= min_amount"
+    output: filtered_records
+
+  - step: check_has_data
+    operation: conditional
+    condition: "COUNT(filtered_records) == 0"
+    then:
+      - step: return_no_data
+        operation: return
+        return_error:
+          error_code: no_data
+          message: "No records found matching criteria"
+
+  - step: group_by_category
+    operation: data_transform
+    description: Group records by category
+    input: filtered_records
+    transform: aggregate
+    group_by: category
+    aggregations:
+      total_sales: "SUM(amount)"
+      count: "COUNT(*)"
+      average: "AVG(amount)"
+    output: category_summaries
+
+  - step: calculate_totals
+    operation: data_transform
+    description: Calculate overall totals
+    input: filtered_records
+    transform: reduce
+    aggregations:
+      total_sales: "SUM(amount)"
+      total_records: "COUNT(*)"
+    output: totals
+
+  - step: build_summary
+    operation: return
+    return_success:
+      summary:
+        total_sales: "{totals.total_sales}"
+        total_records: "{totals.total_records}"
+        date_range_start: "{start_date}"
+        date_range_end: "{end_date}"
+      record_count: "{totals.total_records}"
+      categories: "{category_summaries}"
+
+performance:
+  expected_latency_ms: 500
+  memory_limit_mb: 512
+  timeout_seconds: 60
+
+testing:
+  property_tests:
+    - property: sum_consistency
+      description: Sum of category totals equals overall total
+      invariant: "SUM(categories.total_sales) == summary.total_sales"
+
+    - property: count_consistency
+      description: Sum of category counts equals total records
+      invariant: "SUM(categories.count) == summary.total_records"
+
+  test_cases:
+    - name: empty_input
+      inputs:
+        records: []
+        start_date: "2025-01-01T00:00:00Z"
+        end_date: "2025-01-31T23:59:59Z"
+      expected_output:
+        success: false
+        error_code: no_data
+
+    - name: invalid_date_range
+      inputs:
+        records: []
+        start_date: "2025-01-31T00:00:00Z"
+        end_date: "2025-01-01T00:00:00Z"
+      expected_output:
+        success: false
+        error_code: invalid_date_range
+

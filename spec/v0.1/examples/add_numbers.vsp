@@ -1,0 +1,77 @@
+node_id: add_numbers_v1
+type: function
+intent: add_two_numbers
+
+metadata:
+  author: vesper-team
+  created: 2025-01-08T10:00:00Z
+  version: 1.0.0
+  description: A simple arithmetic function demonstrating contracts
+  tags: [example, arithmetic, beginner]
+
+inputs:
+  a:
+    type: integer
+    required: true
+    description: First number to add
+
+  b:
+    type: integer
+    required: true
+    description: Second number to add
+
+outputs:
+  success:
+    result:
+      type: integer
+      description: The sum of a and b
+  error:
+    error_code:
+      type: enum
+      values: [overflow]
+    message:
+      type: string
+
+contracts:
+  postconditions:
+    - "result == a + b"
+  invariants:
+    - "result >= a OR result >= b"  # At least one (handles negative numbers)
+
+flow:
+  - step: compute_sum
+    operation: arithmetic
+    expression: "a + b"
+    output: result
+
+  - step: return_result
+    operation: return
+    return_success:
+      result: "{result}"
+
+testing:
+  test_cases:
+    - name: add_positive_numbers
+      inputs:
+        a: 5
+        b: 3
+      expected_output:
+        success: true
+        result: 8
+
+    - name: add_negative_numbers
+      inputs:
+        a: -5
+        b: -3
+      expected_output:
+        success: true
+        result: -8
+
+    - name: add_mixed_numbers
+      inputs:
+        a: 10
+        b: -4
+      expected_output:
+        success: true
+        result: 6
+
