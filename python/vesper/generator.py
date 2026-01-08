@@ -21,11 +21,12 @@ from typing import Any, NamedTuple
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from vesper.models import VesperNode, InputSpec, FlowStep
+from vesper.models import FlowStep, InputSpec, VesperNode
 
 
 class FieldSpec(NamedTuple):
     """Specification for a generated field."""
+
     type_hint: str
     description: str | None
     default: str | None
@@ -34,12 +35,14 @@ class FieldSpec(NamedTuple):
 
 class Condition(NamedTuple):
     """A translated condition."""
+
     original: str
     python: str
 
 
 class FlowStepCode(NamedTuple):
     """Generated code for a flow step."""
+
     name: str
     operation: str
     description: str | None
@@ -105,11 +108,7 @@ class VesperGenerator:
         self.env.filters["python_type"] = self._to_python_type
         self.env.filters["indent"] = self._indent
 
-    def generate(
-        self,
-        node: VesperNode,
-        source_file: str | None = None
-    ) -> str:
+    def generate(self, node: VesperNode, source_file: str | None = None) -> str:
         """
         Generate Python code from a Vesper node.
 
@@ -131,10 +130,7 @@ class VesperGenerator:
         return code
 
     def generate_to_file(
-        self,
-        node: VesperNode,
-        output_path: Path,
-        source_file: str | None = None
+        self, node: VesperNode, output_path: Path, source_file: str | None = None
     ) -> Path:
         """
         Generate Python code and write to a file.
@@ -155,9 +151,7 @@ class VesperGenerator:
         return output_path
 
     def _build_context(
-        self,
-        node: VesperNode,
-        source_file: str | None = None
+        self, node: VesperNode, source_file: str | None = None
     ) -> dict[str, Any]:
         """Build the template context from a Vesper node."""
 
@@ -220,16 +214,10 @@ class VesperGenerator:
         ]
 
         # Process flow steps
-        flow_steps = [
-            self._process_flow_step(step, input_names)
-            for step in node.flow
-        ]
+        flow_steps = [self._process_flow_step(step, input_names) for step in node.flow]
 
         # Check for async/special operations
-        has_async = any(
-            step.operation in self.ASYNC_OPERATIONS
-            for step in node.flow
-        )
+        has_async = any(step.operation in self.ASYNC_OPERATIONS for step in node.flow)
         has_http = any(
             step.operation in {"external_api_call", "http_request"}
             for step in node.flow
@@ -244,25 +232,20 @@ class VesperGenerator:
             "source_file": source_file,
             "timestamp": datetime.now().isoformat(),
             "function_name": self._to_function_name(node.node_id),
-
             # Input information
             "input_names": input_names,
             "input_types": input_types,
             "input_specs": input_specs,
             "input_signature": input_signature,
-
             # Output information
             "success_fields": success_fields,
             "error_fields": error_fields,
             "error_codes": error_codes,
-
             # Contracts
             "preconditions": preconditions,
             "postconditions": postconditions,
-
             # Flow
             "flow_steps": flow_steps,
-
             # Flags
             "has_async_operations": has_async,
             "has_http_operations": has_http,
@@ -308,14 +291,14 @@ class VesperGenerator:
         result = condition
 
         # Replace logical operators
-        result = re.sub(r'\bAND\b', 'and', result, flags=re.IGNORECASE)
-        result = re.sub(r'\bOR\b', 'or', result, flags=re.IGNORECASE)
-        result = re.sub(r'\bNOT\b', 'not', result, flags=re.IGNORECASE)
+        result = re.sub(r"\bAND\b", "and", result, flags=re.IGNORECASE)
+        result = re.sub(r"\bOR\b", "or", result, flags=re.IGNORECASE)
+        result = re.sub(r"\bNOT\b", "not", result, flags=re.IGNORECASE)
 
         # Replace comparison operators
-        result = re.sub(r'\bIN\b', 'in', result, flags=re.IGNORECASE)
-        result = re.sub(r'\bIS NOT NULL\b', 'is not None', result, flags=re.IGNORECASE)
-        result = re.sub(r'\bIS NULL\b', 'is None', result, flags=re.IGNORECASE)
+        result = re.sub(r"\bIN\b", "in", result, flags=re.IGNORECASE)
+        result = re.sub(r"\bIS NOT NULL\b", "is not None", result, flags=re.IGNORECASE)
+        result = re.sub(r"\bIS NULL\b", "is None", result, flags=re.IGNORECASE)
 
         # Replace string literals
         result = result.replace("''", '""')
@@ -324,12 +307,25 @@ class VesperGenerator:
 
     def _replace_vars_with_context(self, expression: str) -> str:
         """Replace variable references with context lookups."""
+
         def replace_var(match: re.Match[str]) -> str:
             var = match.group(1)
             # Don't replace Python keywords, operators, or numeric literals
             keywords = {
-                'and', 'or', 'not', 'True', 'False', 'None', 'in', 'is',
-                'if', 'else', 'for', 'while', 'return', 'context',
+                "and",
+                "or",
+                "not",
+                "True",
+                "False",
+                "None",
+                "in",
+                "is",
+                "if",
+                "else",
+                "for",
+                "while",
+                "return",
+                "context",
             }
             if var in keywords:
                 return var
@@ -433,9 +429,7 @@ class VesperGenerator:
         return sorted(codes)
 
     def _process_flow_step(
-        self,
-        step: FlowStep,
-        input_names: list[str]
+        self, step: FlowStep, input_names: list[str]
     ) -> FlowStepCode:
         """Process a flow step into generated code."""
         code_lines: list[str] = []
@@ -443,9 +437,7 @@ class VesperGenerator:
 
         # Process guards
         if step.guards:
-            guard_conditions = [
-                self._translate_condition(g) for g in step.guards
-            ]
+            guard_conditions = [self._translate_condition(g) for g in step.guards]
             guard = " and ".join(f"({g})" for g in guard_conditions)
 
         # Generate code based on operation type
@@ -497,7 +489,7 @@ class VesperGenerator:
                 error = step.on_failure["return_error"]
                 error_code = error.get("error_code", "validation_failed")
                 message = error.get("message", f"Validation failed: {guard}")
-                lines.append(f'    context["_error"] = ErrorResult(')
+                lines.append('    context["_error"] = ErrorResult(')
                 lines.append(f'        error_code="{error_code}",')
                 lines.append(f'        message="{message}"')
                 lines.append("    )")
@@ -529,7 +521,7 @@ class VesperGenerator:
         def replace_var(match: re.Match[str]) -> str:
             var = match.group(1)
             # Don't replace Python keywords or numeric literals
-            if var in {'and', 'or', 'not', 'True', 'False', 'None', 'in', 'is'}:
+            if var in {"and", "or", "not", "True", "False", "None", "in", "is"}:
                 return var
             return f'context["{var}"]'
 
@@ -540,9 +532,7 @@ class VesperGenerator:
         ]
 
     def _generate_conditional_code(
-        self,
-        step: FlowStep,
-        input_names: list[str]
+        self, step: FlowStep, input_names: list[str]
     ) -> list[str]:
         """Generate code for conditional steps."""
         lines = []
@@ -582,7 +572,11 @@ class VesperGenerator:
         if step.return_success:
             lines.append("# Return success result")
             for key, value in step.return_success.items():
-                if isinstance(value, str) and value.startswith("{") and value.endswith("}"):
+                if (
+                    isinstance(value, str)
+                    and value.startswith("{")
+                    and value.endswith("}")
+                ):
                     var_name = value[1:-1]
                     lines.append(f'context["{key}"] = context.get("{var_name}")')
                 else:
@@ -602,8 +596,8 @@ class VesperGenerator:
         query = step.parameters.get("query", "SELECT 1")
 
         return [
-            f'# Database query: {query}',
-            '# TODO: Inject database client via dependency injection',
+            f"# Database query: {query}",
+            "# TODO: Inject database client via dependency injection",
             'context["query_result"] = None  # Placeholder',
         ]
 
@@ -612,9 +606,9 @@ class VesperGenerator:
         table = step.parameters.get("table", "unknown")
 
         return [
-            f'# Database write to table: {table}',
-            '# TODO: Inject database client via dependency injection',
-            'pass  # Placeholder',
+            f"# Database write to table: {table}",
+            "# TODO: Inject database client via dependency injection",
+            "pass  # Placeholder",
         ]
 
     def _generate_api_call_code(self, step: FlowStep) -> list[str]:
@@ -624,8 +618,8 @@ class VesperGenerator:
         method = step.parameters.get("method", "GET")
 
         return [
-            f'# External API call to {provider}: {method} {endpoint}',
-            '# TODO: Inject HTTP client via dependency injection',
+            f"# External API call to {provider}: {method} {endpoint}",
+            "# TODO: Inject HTTP client via dependency injection",
             'context["api_response"] = None  # Placeholder',
         ]
 
@@ -634,17 +628,17 @@ class VesperGenerator:
         event_type = step.parameters.get("event_type", "unknown")
 
         return [
-            f'# Publish event: {event_type}',
-            '# TODO: Inject event bus via dependency injection',
-            'pass  # Placeholder',
+            f"# Publish event: {event_type}",
+            "# TODO: Inject event bus via dependency injection",
+            "pass  # Placeholder",
         ]
 
     def _generate_transform_code(self, step: FlowStep) -> list[str]:
         """Generate code for data transform steps."""
         return [
             "# Data transformation",
-            '# TODO: Implement transformation logic',
-            'pass  # Placeholder',
+            "# TODO: Implement transformation logic",
+            "pass  # Placeholder",
         ]
 
     @staticmethod
@@ -652,4 +646,3 @@ class VesperGenerator:
         """Indent text by the specified amount."""
         prefix = " " * amount
         return "\n".join(prefix + line for line in text.split("\n"))
-

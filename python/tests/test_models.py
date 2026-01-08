@@ -3,18 +3,14 @@ Tests for Vesper Models
 """
 
 import pytest
-from datetime import datetime
-
 from vesper.models import (
-    VesperNode,
-    NodeType,
-    InputSpec,
-    Outputs,
     Contracts,
     FlowStep,
-    ValidationResult,
-    ValidationError,
+    InputSpec,
     Metadata,
+    NodeType,
+    ValidationResult,
+    VesperNode,
 )
 
 
@@ -24,9 +20,7 @@ class TestVesperNode:
     def test_create_minimal_node(self) -> None:
         """Test creating a minimal Vesper node."""
         node = VesperNode(
-            node_id="test_v1",
-            type=NodeType.FUNCTION,
-            intent="test intent"
+            node_id="test_v1", type=NodeType.FUNCTION, intent="test intent"
         )
 
         assert node.node_id == "test_v1"
@@ -42,7 +36,7 @@ class TestVesperNode:
             inputs={
                 "name": InputSpec(type="string", required=True),
                 "age": InputSpec(type="integer", required=False, default=0),
-            }
+            },
         )
 
         assert "name" in node.inputs
@@ -55,8 +49,10 @@ class TestVesperNode:
             type=NodeType.FUNCTION,
             intent="test get_input_spec",
             inputs={
-                "value": InputSpec(type="integer", required=True, description="A value"),
-            }
+                "value": InputSpec(
+                    type="integer", required=True, description="A value"
+                ),
+            },
         )
 
         spec = node.get_input_spec("value")
@@ -69,7 +65,7 @@ class TestVesperNode:
         node = VesperNode(
             node_id="missing_test_v1",
             type=NodeType.FUNCTION,
-            intent="test missing input"
+            intent="test missing input",
         )
 
         with pytest.raises(KeyError):
@@ -96,10 +92,7 @@ class TestInputSpec:
 
     def test_input_with_constraints(self) -> None:
         """Test input with constraints."""
-        spec = InputSpec(
-            type="string",
-            constraints=["non_empty", "max_length:100"]
-        )
+        spec = InputSpec(type="string", constraints=["non_empty", "max_length:100"])
 
         assert len(spec.constraints) == 2
         assert "non_empty" in spec.constraints
@@ -121,7 +114,7 @@ class TestContracts:
         contracts = Contracts(
             preconditions=["amount > 0", "user.authenticated"],
             postconditions=["transaction.recorded"],
-            invariants=["balance >= 0"]
+            invariants=["balance >= 0"],
         )
 
         assert len(contracts.preconditions) == 2
@@ -144,7 +137,7 @@ class TestFlowStep:
         step = FlowStep(
             step="guarded_step",
             operation="validation",
-            guards=["user.active", "amount > 0"]
+            guards=["user.active", "amount > 0"],
         )
 
         assert len(step.guards) == 2
@@ -155,7 +148,7 @@ class TestFlowStep:
             step="template_step",
             operation="string_template",
             template="Hello, {name}!",
-            output="greeting"
+            output="greeting",
         )
 
         assert step.template == "Hello, {name}!"
@@ -209,10 +202,9 @@ class TestMetadata:
             author="test@example.com",
             version="1.0.0",
             tags=["example", "test"],
-            description="A test node"
+            description="A test node",
         )
 
         assert metadata.author == "test@example.com"
         assert metadata.version == "1.0.0"
         assert "example" in metadata.tags
-

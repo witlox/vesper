@@ -56,4 +56,3 @@ pub enum VesperError {
     #[error("JSON error: {0}")]
     JsonError(#[from] serde_json::Error),
 }
-

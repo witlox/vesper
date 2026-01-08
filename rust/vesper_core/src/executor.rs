@@ -1,8 +1,8 @@
 //! Semantic executor for Vesper nodes
 
-use std::collections::HashMap;
 use crate::error::{Result, VesperError};
-use crate::types::{VesperNode, FlowStep, Value};
+use crate::types::{FlowStep, Value, VesperNode};
+use std::collections::HashMap;
 
 /// Result of executing a Vesper node
 #[derive(Debug, Clone)]
@@ -86,9 +86,10 @@ impl SemanticExecutor {
     ) -> Result<ExecutionResult> {
         let start = std::time::Instant::now();
 
-        let node = self.nodes.get(node_id).ok_or_else(|| {
-            VesperError::ExecutionError(format!("Node not found: {}", node_id))
-        })?;
+        let node = self
+            .nodes
+            .get(node_id)
+            .ok_or_else(|| VesperError::ExecutionError(format!("Node not found: {}", node_id)))?;
 
         // Validate inputs
         self.validate_inputs(node, &inputs)?;
@@ -116,11 +117,7 @@ impl SemanticExecutor {
     }
 
     /// Validate inputs against node specification
-    fn validate_inputs(
-        &self,
-        node: &VesperNode,
-        inputs: &HashMap<String, Value>,
-    ) -> Result<()> {
+    fn validate_inputs(&self, node: &VesperNode, inputs: &HashMap<String, Value>) -> Result<()> {
         for (name, spec) in &node.inputs {
             if spec.required && !inputs.contains_key(name) {
                 return Err(VesperError::MissingInput(name.clone()));
@@ -130,11 +127,7 @@ impl SemanticExecutor {
     }
 
     /// Execute the flow steps
-    fn execute_flow(
-        &self,
-        node: &VesperNode,
-        ctx: &mut ExecutionContext,
-    ) -> Result<Value> {
+    fn execute_flow(&self, node: &VesperNode, ctx: &mut ExecutionContext) -> Result<Value> {
         let mut last_result = Value::Null;
 
         for step in &node.flow {
@@ -150,11 +143,7 @@ impl SemanticExecutor {
     }
 
     /// Execute a single flow step
-    fn execute_step(
-        &self,
-        step: &FlowStep,
-        ctx: &mut ExecutionContext,
-    ) -> Result<Value> {
+    fn execute_step(&self, step: &FlowStep, ctx: &mut ExecutionContext) -> Result<Value> {
         tracing::debug!("Executing step: {} ({})", step.step, step.operation);
 
         match step.operation.as_str() {
@@ -171,11 +160,7 @@ impl SemanticExecutor {
     }
 
     /// Execute a validation step
-    fn execute_validation(
-        &self,
-        step: &FlowStep,
-        _ctx: &ExecutionContext,
-    ) -> Result<Value> {
+    fn execute_validation(&self, step: &FlowStep, _ctx: &ExecutionContext) -> Result<Value> {
         for guard in &step.guards {
             // TODO: Implement proper guard evaluation
             tracing::debug!("Checking guard: {}", guard);
@@ -184,11 +169,7 @@ impl SemanticExecutor {
     }
 
     /// Execute a string template step
-    fn execute_template(
-        &self,
-        step: &FlowStep,
-        ctx: &mut ExecutionContext,
-    ) -> Result<Value> {
+    fn execute_template(&self, step: &FlowStep, ctx: &mut ExecutionContext) -> Result<Value> {
         let template = step.template.as_ref().ok_or_else(|| {
             VesperError::ExecutionError("Template step missing template".to_string())
         })?;
@@ -220,11 +201,7 @@ impl SemanticExecutor {
     }
 
     /// Execute an arithmetic step
-    fn execute_arithmetic(
-        &self,
-        step: &FlowStep,
-        ctx: &mut ExecutionContext,
-    ) -> Result<Value> {
+    fn execute_arithmetic(&self, step: &FlowStep, ctx: &mut ExecutionContext) -> Result<Value> {
         let expression = step.expression.as_ref().ok_or_else(|| {
             VesperError::ExecutionError("Arithmetic step missing expression".to_string())
         })?;
@@ -263,7 +240,9 @@ impl SemanticExecutor {
                     "*" => left_val * right_val,
                     "/" => {
                         if right_val == 0.0 {
-                            return Err(VesperError::ExecutionError("Division by zero".to_string()));
+                            return Err(VesperError::ExecutionError(
+                                "Division by zero".to_string(),
+                            ));
                         }
                         left_val / right_val
                     }
@@ -296,11 +275,9 @@ impl SemanticExecutor {
 
         // Try as a variable
         if let Some(value) = ctx.get(s) {
-            return value.as_float().ok_or_else(|| {
-                VesperError::TypeError {
-                    expected: "number".to_string(),
-                    actual: format!("{:?}", value),
-                }
+            return value.as_float().ok_or_else(|| VesperError::TypeError {
+                expected: "number".to_string(),
+                actual: format!("{:?}", value),
             });
         }
 
@@ -311,11 +288,7 @@ impl SemanticExecutor {
     }
 
     /// Execute a return step
-    fn execute_return(
-        &self,
-        step: &FlowStep,
-        ctx: &ExecutionContext,
-    ) -> Result<Value> {
+    fn execute_return(&self, step: &FlowStep, ctx: &ExecutionContext) -> Result<Value> {
         if let Some(success_data) = &step.return_success {
             let mut result = HashMap::new();
             for (key, value) in success_data {
@@ -338,18 +311,17 @@ impl SemanticExecutor {
                 .map(String::from)
                 .unwrap_or_else(|| "An error occurred".to_string());
 
-            return Err(VesperError::ExecutionError(format!("{}: {}", code, message)));
+            return Err(VesperError::ExecutionError(format!(
+                "{}: {}",
+                code, message
+            )));
         }
 
         Ok(Value::Null)
     }
 
     /// Execute a conditional step
-    fn execute_conditional(
-        &self,
-        step: &FlowStep,
-        _ctx: &mut ExecutionContext,
-    ) -> Result<Value> {
+    fn execute_conditional(&self, step: &FlowStep, _ctx: &mut ExecutionContext) -> Result<Value> {
         // TODO: Implement proper condition evaluation
         let condition = step.condition.as_ref().ok_or_else(|| {
             VesperError::ExecutionError("Conditional step missing condition".to_string())
@@ -362,6 +334,7 @@ impl SemanticExecutor {
     }
 
     /// Resolve a YAML value, substituting variable references
+    #[allow(clippy::only_used_in_recursion)]
     fn resolve_value(&self, value: &serde_yaml::Value, ctx: &ExecutionContext) -> Value {
         match value {
             serde_yaml::Value::String(s) => {
@@ -495,4 +468,3 @@ flow:
         );
     }
 }
-

@@ -3,8 +3,8 @@
 //! This module provides JIT compilation of hot paths to native code.
 //! Currently a placeholder - full implementation would use LLVM.
 
-use vesper_core::types::VesperNode;
 use std::collections::HashMap;
+use vesper_core::types::VesperNode;
 
 /// Compiled native code representation (placeholder)
 pub struct CompiledCode {
@@ -109,11 +109,7 @@ impl JitCompiler {
     pub fn cache_stats(&self) -> CacheStats {
         CacheStats {
             entries: self.cache.len(),
-            oldest: self
-                .cache
-                .values()
-                .map(|c| c.compiled_at)
-                .min(),
+            oldest: self.cache.values().map(|c| c.compiled_at).min(),
         }
     }
 }
@@ -168,4 +164,3 @@ flow:
         assert_eq!(stats.entries, 1);
     }
 }
-

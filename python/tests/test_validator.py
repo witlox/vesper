@@ -9,8 +9,6 @@ These tests verify that:
 5. Best practices are suggested
 """
 
-import pytest
-
 from vesper.compiler import VesperCompiler
 from vesper.validator import VesperValidator
 
@@ -91,10 +89,7 @@ flow:
         result = self.validator.validate(node)
 
         # This should generate an error or warning about missing type
-        has_type_issue = any(
-            "type" in issue.message.lower()
-            for issue in result.issues
-        )
+        has_type_issue = any("type" in issue.message.lower() for issue in result.issues)
         assert has_type_issue
 
     def test_validate_unknown_type(self) -> None:
@@ -144,7 +139,7 @@ flow:
     operation: arithmetic
     expression: "x + 1"
     output: result
-  
+
   - step: compute
     operation: arithmetic
     expression: "result + 1"
@@ -203,8 +198,7 @@ flow: []
         result = self.validator.validate(node)
 
         assert any(
-            "flow" in w.path and "no flow" in w.message.lower()
-            for w in result.warnings
+            "flow" in w.path and "no flow" in w.message.lower() for w in result.warnings
         )
 
     def test_validate_missing_template(self) -> None:
@@ -292,7 +286,8 @@ flow:
         result = self.validator.validate(node)
 
         assert any(
-            "conflict" in e.message.lower() or "both required and denied" in e.message.lower()
+            "conflict" in e.message.lower()
+            or "both required and denied" in e.message.lower()
             for e in result.errors
         )
 
@@ -389,10 +384,7 @@ flow:
         node = self.compiler.parse(yaml_content)
         result = self.validator.validate(node)
 
-        assert any(
-            "description" in i.path.lower()
-            for i in result.infos
-        )
+        assert any("description" in i.path.lower() for i in result.infos)
 
     def test_suggest_tests(self) -> None:
         """Test that missing tests generate a suggestion."""
@@ -458,4 +450,3 @@ flow:
         strict_result = self.validator.validate(node, strict=True)
 
         assert len(strict_result.errors) >= len(normal_result.warnings)
-

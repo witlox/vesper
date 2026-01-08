@@ -89,4 +89,3 @@ mod tests {
         assert!(!detector.should_compile("node_b_v1"));
     }
 }
-

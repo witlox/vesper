@@ -4,14 +4,13 @@
 //! This crate provides direct execution of Vesper specifications
 //! without intermediate Python code generation.
 
-pub mod error;
-pub mod loader;
-pub mod executor;
-pub mod types;
 pub mod contracts;
+pub mod error;
+pub mod executor;
+pub mod loader;
+pub mod types;
 
-pub use error::{VesperError, Result};
-pub use loader::VesperLoader;
+pub use error::{Result, VesperError};
 pub use executor::SemanticExecutor;
-pub use types::{VesperNode, Value};
-
+pub use loader::VesperLoader;
+pub use types::{Value, VesperNode};

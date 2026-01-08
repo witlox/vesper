@@ -2,10 +2,6 @@
 Tests for the Vesper Compiler
 """
 
-from pathlib import Path
-
-import pytest
-
 from vesper.compiler import VesperCompiler
 from vesper.models import NodeType
 
@@ -157,7 +153,7 @@ flow:
     operation: arithmetic
     expression: "a + b"
     output: result
-  
+
   - step: return_result
     operation: return
     return_success:
@@ -203,7 +199,7 @@ flow:
       return_error:
         error_code: invalid_name
         message: "Name cannot be empty"
-  
+
   - step: greet
     operation: string_template
     template: "Hello, {name}!"
@@ -288,4 +284,3 @@ flow:
         assert "ratio: float" in code
         assert "active: bool" in code
         assert "-> Result" in code
-

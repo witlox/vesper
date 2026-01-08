@@ -261,4 +261,3 @@ mod tests {
         assert!(validator.check_preconditions(&contracts, &inputs).is_err());
     }
 }
-

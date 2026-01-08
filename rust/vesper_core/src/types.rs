@@ -298,4 +298,3 @@ impl From<bool> for Value {
         Value::Bool(b)
     }
 }
-

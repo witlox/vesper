@@ -17,12 +17,13 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from vesper.models import VesperNode, InputSpec, FlowStep
+from vesper.models import FlowStep, InputSpec, VesperNode
 
 
 @dataclass
 class ValidationIssue:
     """A single validation issue."""
+
     path: str
     message: str
     severity: str  # "error", "warning", "info"
@@ -32,6 +33,7 @@ class ValidationIssue:
 @dataclass
 class ValidationResult:
     """Result of validating a Vesper node."""
+
     valid: bool = True
     issues: list[ValidationIssue] = field(default_factory=list)
 
@@ -50,50 +52,43 @@ class ValidationResult:
         """Get all info-level issues."""
         return [i for i in self.issues if i.severity == "info"]
 
-    def add_error(
-        self,
-        path: str,
-        message: str,
-        suggestion: str | None = None
-    ) -> None:
+    def add_error(self, path: str, message: str, suggestion: str | None = None) -> None:
         """Add an error issue."""
-        self.issues.append(ValidationIssue(
-            path=path,
-            message=message,
-            severity="error",
-            suggestion=suggestion,
-        ))
+        self.issues.append(
+            ValidationIssue(
+                path=path,
+                message=message,
+                severity="error",
+                suggestion=suggestion,
+            )
+        )
         self.valid = False
 
     def add_warning(
-        self,
-        path: str,
-        message: str,
-        suggestion: str | None = None
+        self, path: str, message: str, suggestion: str | None = None
     ) -> None:
         """Add a warning issue."""
-        self.issues.append(ValidationIssue(
-            path=path,
-            message=message,
-            severity="warning",
-            suggestion=suggestion,
-        ))
+        self.issues.append(
+            ValidationIssue(
+                path=path,
+                message=message,
+                severity="warning",
+                suggestion=suggestion,
+            )
+        )
 
-    def add_info(
-        self,
-        path: str,
-        message: str,
-        suggestion: str | None = None
-    ) -> None:
+    def add_info(self, path: str, message: str, suggestion: str | None = None) -> None:
         """Add an info issue."""
-        self.issues.append(ValidationIssue(
-            path=path,
-            message=message,
-            severity="info",
-            suggestion=suggestion,
-        ))
+        self.issues.append(
+            ValidationIssue(
+                path=path,
+                message=message,
+                severity="info",
+                suggestion=suggestion,
+            )
+        )
 
-    def merge(self, other: "ValidationResult") -> None:
+    def merge(self, other: ValidationResult) -> None:
         """Merge another validation result into this one."""
         self.issues.extend(other.issues)
         if not other.valid:
@@ -117,17 +112,32 @@ class VesperValidator:
 
     # Valid Vesper types
     VALID_TYPES = {
-        "string", "integer", "decimal", "boolean", "bytes", "timestamp",
-        "enum", "any",
+        "string",
+        "integer",
+        "decimal",
+        "boolean",
+        "bytes",
+        "timestamp",
+        "enum",
+        "any",
     }
 
     # Valid operations
     VALID_OPERATIONS = {
-        "validation", "conditional", "state_machine_transition",
-        "database_query", "database_write", "database_update",
-        "external_api_call", "event_publish", "event_subscribe",
-        "data_transform", "string_template", "arithmetic",
-        "return", "call_node",
+        "validation",
+        "conditional",
+        "state_machine_transition",
+        "database_query",
+        "database_write",
+        "database_update",
+        "external_api_call",
+        "event_publish",
+        "event_subscribe",
+        "data_transform",
+        "string_template",
+        "arithmetic",
+        "return",
+        "call_node",
     }
 
     def validate(self, node: VesperNode, strict: bool = False) -> ValidationResult:
@@ -183,9 +193,7 @@ class VesperValidator:
         return result
 
     def _validate_required_fields(
-        self,
-        node: VesperNode,
-        result: ValidationResult
+        self, node: VesperNode, result: ValidationResult
     ) -> None:
         """Validate that all required fields are present."""
         if not node.node_id:
@@ -194,11 +202,7 @@ class VesperValidator:
         if not node.intent:
             result.add_error("intent", "Intent is required")
 
-    def _validate_node_id(
-        self,
-        node: VesperNode,
-        result: ValidationResult
-    ) -> None:
+    def _validate_node_id(self, node: VesperNode, result: ValidationResult) -> None:
         """Validate node_id format."""
         if not node.node_id:
             return
@@ -209,24 +213,22 @@ class VesperValidator:
             result.add_error(
                 "node_id",
                 f"Invalid node_id format: '{node.node_id}'. Expected format: name_vN (e.g., 'payment_handler_v1')",
-                suggestion="Use lowercase with underscores and version suffix"
+                suggestion="Use lowercase with underscores and version suffix",
             )
 
         # Check for reserved words
         reserved = {"import", "from", "class", "def", "return", "if", "else", "try"}
-        base_name = node.node_id.split("_v")[0] if "_v" in node.node_id else node.node_id
+        base_name = (
+            node.node_id.split("_v")[0] if "_v" in node.node_id else node.node_id
+        )
         if base_name in reserved:
             result.add_error(
                 "node_id",
                 f"Node ID base name '{base_name}' is a Python reserved word",
-                suggestion="Choose a different name"
+                suggestion="Choose a different name",
             )
 
-    def _validate_inputs(
-        self,
-        node: VesperNode,
-        result: ValidationResult
-    ) -> None:
+    def _validate_inputs(self, node: VesperNode, result: ValidationResult) -> None:
         """Validate input specifications."""
         for name, spec in node.inputs.items():
             path = f"inputs.{name}"
@@ -236,7 +238,7 @@ class VesperValidator:
                 result.add_error(
                     path,
                     f"Invalid input name: '{name}'",
-                    suggestion="Use lowercase with underscores"
+                    suggestion="Use lowercase with underscores",
                 )
 
             # Get type
@@ -257,7 +259,7 @@ class VesperValidator:
                 result.add_warning(
                     path,
                     f"Unknown type: '{type_str}'",
-                    suggestion=f"Valid types: {', '.join(sorted(self.VALID_TYPES))}"
+                    suggestion=f"Valid types: {', '.join(sorted(self.VALID_TYPES))}",
                 )
 
             # Validate constraints
@@ -265,23 +267,18 @@ class VesperValidator:
                 if not self._is_valid_constraint(constraint):
                     result.add_warning(
                         f"{path}.constraints[{i}]",
-                        f"Constraint may be invalid: '{constraint}'"
+                        f"Constraint may be invalid: '{constraint}'",
                     )
 
-    def _validate_outputs(
-        self,
-        node: VesperNode,
-        result: ValidationResult
-    ) -> None:
+    def _validate_outputs(self, node: VesperNode, result: ValidationResult) -> None:
         """Validate output specifications."""
         outputs = node.outputs
 
         if isinstance(outputs, dict):
             success = outputs.get("success", {})
-            error = outputs.get("error", {})
+            outputs.get("error", {})
         elif hasattr(outputs, "success"):
             success = outputs.success
-            error = outputs.error
         else:
             result.add_warning("outputs", "Output specification format is unclear")
             return
@@ -291,7 +288,7 @@ class VesperValidator:
             result.add_info(
                 "outputs.success",
                 "No success outputs defined",
-                suggestion="Consider adding output fields for documentation"
+                suggestion="Consider adding output fields for documentation",
             )
 
         for name, spec in success.items():
@@ -304,16 +301,9 @@ class VesperValidator:
                 type_str = None
 
             if type_str and not self._is_valid_type(type_str):
-                result.add_warning(
-                    path,
-                    f"Unknown output type: '{type_str}'"
-                )
+                result.add_warning(path, f"Unknown output type: '{type_str}'")
 
-    def _validate_contracts(
-        self,
-        node: VesperNode,
-        result: ValidationResult
-    ) -> None:
+    def _validate_contracts(self, node: VesperNode, result: ValidationResult) -> None:
         """Validate contracts are well-formed."""
         # Validate preconditions
         for i, cond in enumerate(node.contracts.preconditions):
@@ -335,11 +325,7 @@ class VesperValidator:
             if not inv.strip():
                 result.add_error(path, "Empty invariant")
 
-    def _validate_condition(
-        self,
-        condition: str,
-        node: VesperNode
-    ) -> list[str]:
+    def _validate_condition(self, condition: str, node: VesperNode) -> list[str]:
         """Validate a single condition expression."""
         issues = []
 
@@ -375,17 +361,11 @@ class VesperValidator:
 
         return issues
 
-    def _validate_flow(
-        self,
-        node: VesperNode,
-        result: ValidationResult
-    ) -> None:
+    def _validate_flow(self, node: VesperNode, result: ValidationResult) -> None:
         """Validate flow steps."""
         if not node.flow:
             result.add_warning(
-                "flow",
-                "No flow steps defined",
-                suggestion="Add at least one flow step"
+                "flow", "No flow steps defined", suggestion="Add at least one flow step"
             )
             return
 
@@ -410,48 +390,53 @@ class VesperValidator:
                     result.add_warning(
                         f"{path}.operation",
                         f"Unknown operation: '{step.operation}'",
-                        suggestion=f"Valid operations: {', '.join(sorted(self.VALID_OPERATIONS))}"
+                        suggestion=f"Valid operations: {', '.join(sorted(self.VALID_OPERATIONS))}",
                     )
 
             # Validate operation-specific requirements
             self._validate_step_requirements(step, path, result)
 
     def _validate_step_requirements(
-        self,
-        step: FlowStep,
-        path: str,
-        result: ValidationResult
+        self, step: FlowStep, path: str, result: ValidationResult
     ) -> None:
         """Validate operation-specific requirements."""
         op = step.operation
 
         if op == "string_template":
             if not step.template:
-                result.add_error(f"{path}.template", "string_template requires a template")
+                result.add_error(
+                    f"{path}.template", "string_template requires a template"
+                )
 
         elif op == "arithmetic":
             if not step.expression:
-                result.add_error(f"{path}.expression", "arithmetic requires an expression")
+                result.add_error(
+                    f"{path}.expression", "arithmetic requires an expression"
+                )
 
         elif op == "conditional":
             if not step.condition:
-                result.add_error(f"{path}.condition", "conditional requires a condition")
+                result.add_error(
+                    f"{path}.condition", "conditional requires a condition"
+                )
 
         elif op == "database_query":
             if "query" not in step.parameters:
-                result.add_warning(f"{path}.parameters", "database_query should have a query parameter")
+                result.add_warning(
+                    f"{path}.parameters", "database_query should have a query parameter"
+                )
 
         elif op == "external_api_call":
             if "provider" not in step.parameters:
-                result.add_warning(f"{path}.parameters", "external_api_call should specify a provider")
+                result.add_warning(
+                    f"{path}.parameters", "external_api_call should specify a provider"
+                )
             if "endpoint" not in step.parameters:
-                result.add_warning(f"{path}.parameters", "external_api_call should specify an endpoint")
+                result.add_warning(
+                    f"{path}.parameters", "external_api_call should specify an endpoint"
+                )
 
-    def _validate_security(
-        self,
-        node: VesperNode,
-        result: ValidationResult
-    ) -> None:
+    def _validate_security(self, node: VesperNode, result: ValidationResult) -> None:
         """Validate security configuration."""
         security = node.security
 
@@ -465,9 +450,9 @@ class VesperValidator:
         for cap in security.capabilities_required:
             if cap in dangerous:
                 result.add_warning(
-                    f"security.capabilities_required",
+                    "security.capabilities_required",
                     f"Capability '{cap}' is potentially dangerous",
-                    suggestion="Ensure this capability is actually needed"
+                    suggestion="Ensure this capability is actually needed",
                 )
 
         # Check for conflicting capabilities
@@ -477,8 +462,7 @@ class VesperValidator:
 
         if conflicts:
             result.add_error(
-                "security",
-                f"Capabilities both required and denied: {conflicts}"
+                "security", f"Capabilities both required and denied: {conflicts}"
             )
 
         # Recommend audit for sensitive operations
@@ -490,14 +474,10 @@ class VesperValidator:
             result.add_warning(
                 "security.audit_level",
                 "Node has external operations but audit is disabled",
-                suggestion="Consider enabling audit_level: basic or detailed"
+                suggestion="Consider enabling audit_level: basic or detailed",
             )
 
-    def _validate_performance(
-        self,
-        node: VesperNode,
-        result: ValidationResult
-    ) -> None:
+    def _validate_performance(self, node: VesperNode, result: ValidationResult) -> None:
         """Validate performance configuration."""
         perf = node.performance
 
@@ -506,7 +486,7 @@ class VesperValidator:
             if perf.expected_latency_ms > perf.p99_latency_ms:
                 result.add_error(
                     "performance",
-                    "expected_latency_ms cannot be greater than p99_latency_ms"
+                    "expected_latency_ms cannot be greater than p99_latency_ms",
                 )
 
         # Check timeout
@@ -515,14 +495,10 @@ class VesperValidator:
                 result.add_warning(
                     "performance",
                     "timeout_seconds is less than max_latency_ms",
-                    suggestion="Increase timeout or reduce max_latency expectation"
+                    suggestion="Increase timeout or reduce max_latency expectation",
                 )
 
-    def _validate_references(
-        self,
-        node: VesperNode,
-        result: ValidationResult
-    ) -> None:
+    def _validate_references(self, node: VesperNode, result: ValidationResult) -> None:
         """Validate cross-references between sections."""
         input_names = set(node.inputs.keys())
 
@@ -540,25 +516,21 @@ class VesperValidator:
                     if var_name not in defined_vars:
                         result.add_warning(
                             f"flow[{i}]",
-                            f"Reference to potentially undefined variable: '{var_name}'"
+                            f"Reference to potentially undefined variable: '{var_name}'",
                         )
 
             # Add output to defined vars
             if step.output:
                 defined_vars.add(step.output)
 
-    def _check_best_practices(
-        self,
-        node: VesperNode,
-        result: ValidationResult
-    ) -> None:
+    def _check_best_practices(self, node: VesperNode, result: ValidationResult) -> None:
         """Check for best practice violations."""
         # Intent should be descriptive
         if node.intent and len(node.intent) < 10:
             result.add_info(
                 "intent",
                 "Intent is very short",
-                suggestion="Consider a more descriptive intent"
+                suggestion="Consider a more descriptive intent",
             )
 
         # Recommend having tests
@@ -566,7 +538,7 @@ class VesperValidator:
             result.add_info(
                 "testing",
                 "No test cases defined",
-                suggestion="Consider adding test_cases for documentation and testing"
+                suggestion="Consider adding test_cases for documentation and testing",
             )
 
         # Recommend metadata
@@ -574,7 +546,7 @@ class VesperValidator:
             result.add_info(
                 "metadata.description",
                 "No description provided",
-                suggestion="Add a description explaining what this node does"
+                suggestion="Add a description explaining what this node does",
             )
 
         # Recommend contracts for complex nodes
@@ -584,7 +556,7 @@ class VesperValidator:
                 result.add_info(
                     "contracts",
                     "Complex node has no contracts defined",
-                    suggestion="Consider adding preconditions and postconditions"
+                    suggestion="Consider adding preconditions and postconditions",
                 )
 
     def _is_valid_type(self, type_str: str) -> bool:
@@ -636,4 +608,3 @@ class VesperValidator:
             return True
 
         return True  # Be permissive by default
-

@@ -11,17 +11,19 @@ import hashlib
 import importlib.util
 import random
 import time
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
-from vesper.models import VesperNode
 from vesper.compiler import VesperCompiler
+from vesper.models import VesperNode
 
 
 class ExecutionMode(Enum):
     """Execution mode for dual-path routing."""
+
     PYTHON_ONLY = "python_only"
     SHADOW_DIRECT = "shadow_direct"
     CANARY_DIRECT = "canary_direct"
@@ -32,6 +34,7 @@ class ExecutionMode(Enum):
 @dataclass
 class ExecutionMetrics:
     """Metrics for a single execution."""
+
     node_id: str
     duration_ms: float
     path_used: str
@@ -43,6 +46,7 @@ class ExecutionMetrics:
 @dataclass
 class RuntimeMetrics:
     """Accumulated metrics for a node."""
+
     node_id: str
     total_executions: int = 0
     python_executions: int = 0
@@ -76,6 +80,7 @@ class RuntimeMetrics:
 @dataclass
 class ExecutionResult:
     """Result of executing a Vesper node."""
+
     success: bool
     data: Any = None
     error: str | None = None
@@ -146,9 +151,8 @@ class MigrationController:
         center = (p + z**2 / (2 * n)) / denominator
 
         import math
-        margin = z * math.sqrt(
-            (p * (1-p) / n + z**2 / (4 * n**2))
-        ) / denominator
+
+        margin = z * math.sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) / denominator
 
         return max(0, center - margin)  # Lower bound
 
@@ -191,19 +195,14 @@ class PythonExecutor:
         if hasattr(module, func_name):
             self._compiled_functions[node.node_id] = getattr(module, func_name)
         elif hasattr(module, f"{func_name}_verified"):
-            self._compiled_functions[node.node_id] = getattr(module, f"{func_name}_verified")
+            self._compiled_functions[node.node_id] = getattr(
+                module, f"{func_name}_verified"
+            )
 
-    async def execute(
-        self,
-        node_id: str,
-        inputs: dict[str, Any]
-    ) -> ExecutionResult:
+    async def execute(self, node_id: str, inputs: dict[str, Any]) -> ExecutionResult:
         """Execute a node with the given inputs."""
         if node_id not in self._compiled_functions:
-            return ExecutionResult(
-                success=False,
-                error=f"Node {node_id} not loaded"
-            )
+            return ExecutionResult(success=False, error=f"Node {node_id} not loaded")
 
         func = self._compiled_functions[node_id]
 
@@ -219,8 +218,8 @@ class PythonExecutor:
                     node_id=node_id,
                     duration_ms=duration_ms,
                     path_used="python",
-                    success=True
-                )
+                    success=True,
+                ),
             )
         except Exception as e:
             duration_ms = (time.perf_counter() - start_time) * 1000
@@ -232,8 +231,8 @@ class PythonExecutor:
                     duration_ms=duration_ms,
                     path_used="python",
                     success=False,
-                    error_type=type(e).__name__
-                )
+                    error_type=type(e).__name__,
+                ),
             )
 
 
@@ -246,9 +245,7 @@ class DirectExecutor:
     """
 
     async def execute(
-        self,
-        node: VesperNode,
-        inputs: dict[str, Any]
+        self, node: VesperNode, inputs: dict[str, Any]
     ) -> ExecutionResult:
         """Execute a node directly (placeholder)."""
         # TODO: Implement actual direct execution
@@ -261,8 +258,8 @@ class DirectExecutor:
                 duration_ms=0.0,
                 path_used="direct",
                 success=False,
-                error_type="NotImplemented"
-            )
+                error_type="NotImplemented",
+            ),
         )
 
 
@@ -312,11 +309,7 @@ class VesperRuntime:
         """Get a loaded node by ID."""
         return self._loaded_nodes.get(node_id)
 
-    async def execute(
-        self,
-        node_id: str,
-        inputs: dict[str, Any]
-    ) -> ExecutionResult:
+    async def execute(self, node_id: str, inputs: dict[str, Any]) -> ExecutionResult:
         """
         Execute a node with the appropriate runtime path.
 
@@ -325,10 +318,7 @@ class VesperRuntime:
         """
         node = self._loaded_nodes.get(node_id)
         if node is None:
-            return ExecutionResult(
-                success=False,
-                error=f"Node {node_id} not loaded"
-            )
+            return ExecutionResult(success=False, error=f"Node {node_id} not loaded")
 
         mode = self.migration_controller.get_execution_mode(node_id)
 
@@ -359,7 +349,9 @@ class VesperRuntime:
                     direct_result = await self.direct_executor.execute(node, inputs)
                     if direct_result.success:
                         if direct_result.metrics:
-                            self.migration_controller.record_execution(direct_result.metrics)
+                            self.migration_controller.record_execution(
+                                direct_result.metrics
+                            )
                         return direct_result
                 except Exception:
                     pass
@@ -374,7 +366,7 @@ class VesperRuntime:
             # Execute both, compare, return Python
             python_result, direct_result = await asyncio.gather(
                 self.python_executor.execute(node_id, inputs),
-                self.direct_executor.execute(node, inputs)
+                self.direct_executor.execute(node, inputs),
             )
 
             # Check for divergence
@@ -396,7 +388,7 @@ class VesperRuntime:
                 # Sample verification
                 python_result, direct_result = await asyncio.gather(
                     self.python_executor.execute(node_id, inputs),
-                    self.direct_executor.execute(node, inputs)
+                    self.direct_executor.execute(node, inputs),
                 )
                 divergence = self._check_divergence(python_result, direct_result)
                 if direct_result.metrics:
@@ -413,10 +405,7 @@ class VesperRuntime:
         return await self.python_executor.execute(node_id, inputs)
 
     async def _shadow_direct_execute(
-        self,
-        node: VesperNode,
-        inputs: dict[str, Any],
-        python_result: ExecutionResult
+        self, node: VesperNode, inputs: dict[str, Any], python_result: ExecutionResult
     ) -> None:
         """Execute direct runtime in shadow mode and record divergence."""
         try:
@@ -425,14 +414,12 @@ class VesperRuntime:
 
             if divergence:
                 self._log_divergence(node.node_id, inputs, python_result, direct_result)
-        except Exception as e:
+        except Exception:
             # Log but don't fail - this is shadow mode
             pass
 
     def _check_divergence(
-        self,
-        python_result: ExecutionResult,
-        direct_result: ExecutionResult
+        self, python_result: ExecutionResult, direct_result: ExecutionResult
     ) -> bool:
         """Check if the two results diverge."""
         # Simple comparison for now
@@ -449,7 +436,7 @@ class VesperRuntime:
         node_id: str,
         inputs: dict[str, Any],
         python_result: ExecutionResult,
-        direct_result: ExecutionResult
+        direct_result: ExecutionResult,
     ) -> None:
         """Log a divergence for later analysis."""
         # TODO: Implement proper divergence logging
@@ -458,11 +445,7 @@ class VesperRuntime:
         print(f"  Python: {python_result.data}")
         print(f"  Direct: {direct_result.data}")
 
-    def execute_sync(
-        self,
-        node_id: str,
-        inputs: dict[str, Any]
-    ) -> ExecutionResult:
+    def execute_sync(self, node_id: str, inputs: dict[str, Any]) -> ExecutionResult:
         """Synchronous wrapper for execute."""
         return asyncio.run(self.execute(node_id, inputs))
 
@@ -477,4 +460,3 @@ class VesperRuntime:
     def set_mode(self, node_id: str, mode: ExecutionMode) -> None:
         """Set the execution mode for a node."""
         self.migration_controller.set_execution_mode(node_id, mode)
-

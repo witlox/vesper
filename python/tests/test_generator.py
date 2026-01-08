@@ -9,7 +9,6 @@ These tests verify that:
 """
 
 import pytest
-
 from vesper.compiler import VesperCompiler
 from vesper.generator import VesperGenerator
 
@@ -473,8 +472,8 @@ flow:
         assert result.is_success
 
         # Negative value should raise ContractViolation
-        ContractViolation = namespace["ContractViolation"]
-        with pytest.raises(ContractViolation):
+        contract_violation = namespace["ContractViolation"]
+        with pytest.raises(contract_violation):
             func(x=-1)
 
 
@@ -568,4 +567,3 @@ flow:
         # Should still compile
         assert "TODO" in code
         compile(code, "<generated>", "exec")
-

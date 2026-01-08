@@ -1,8 +1,8 @@
 //! Vesper specification loader
 
-use std::path::Path;
 use crate::error::{Result, VesperError};
 use crate::types::VesperNode;
+use std::path::Path;
 
 /// Loads Vesper specification files
 pub struct VesperLoader {
@@ -43,7 +43,10 @@ impl VesperLoader {
         if !node.node_id.contains("_v") {
             return Err(VesperError::ValidationError {
                 path: "node_id".to_string(),
-                message: format!("Invalid node_id format: {}. Expected: name_vN", node.node_id),
+                message: format!(
+                    "Invalid node_id format: {}. Expected: name_vN",
+                    node.node_id
+                ),
             });
         }
 
@@ -123,4 +126,3 @@ flow: []
         assert!(result.is_err());
     }
 }
-

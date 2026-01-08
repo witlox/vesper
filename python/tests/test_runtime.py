@@ -3,13 +3,11 @@ Tests for the Vesper Runtime
 """
 
 import pytest
-
 from vesper.runtime import (
-    VesperRuntime,
     ExecutionMode,
-    ExecutionResult,
-    RuntimeMetrics,
     MigrationController,
+    RuntimeMetrics,
+    VesperRuntime,
 )
 
 
@@ -40,7 +38,7 @@ flow:
     operation: arithmetic
     expression: "x * 2"
     output: result
-  
+
   - step: return_result
     operation: return
     return_success:
@@ -74,7 +72,7 @@ flow:
     operation: arithmetic
     expression: "a + b"
     output: result
-  
+
   - step: return_result
     operation: return
     return_success:
@@ -106,7 +104,7 @@ flow:
     operation: arithmetic
     expression: "value * 2"
     output: doubled
-  
+
   - step: return_result
     operation: return
     return_success:
@@ -169,10 +167,7 @@ class TestMigrationController:
         from vesper.runtime import ExecutionMetrics
 
         metrics = ExecutionMetrics(
-            node_id="record_test_v1",
-            duration_ms=50.0,
-            path_used="python",
-            success=True
+            node_id="record_test_v1", duration_ms=50.0, path_used="python", success=True
         )
 
         self.controller.record_execution(metrics)
@@ -194,27 +189,18 @@ class TestRuntimeMetrics:
     def test_avg_duration_calculated(self) -> None:
         """Test average duration calculation."""
         metrics = RuntimeMetrics(
-            node_id="test_v1",
-            total_executions=4,
-            total_duration_ms=100.0
+            node_id="test_v1", total_executions=4, total_duration_ms=100.0
         )
         assert metrics.avg_duration_ms == 25.0
 
     def test_error_rate_calculated(self) -> None:
         """Test error rate calculation."""
-        metrics = RuntimeMetrics(
-            node_id="test_v1",
-            total_executions=100,
-            errors=5
-        )
+        metrics = RuntimeMetrics(node_id="test_v1", total_executions=100, errors=5)
         assert metrics.error_rate == 0.05
 
     def test_divergence_rate_calculated(self) -> None:
         """Test divergence rate calculation."""
         metrics = RuntimeMetrics(
-            node_id="test_v1",
-            total_executions=1000,
-            divergences=10
+            node_id="test_v1", total_executions=1000, divergences=10
         )
         assert metrics.divergence_rate == 0.01
-

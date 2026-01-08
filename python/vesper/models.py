@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class NodeType(str, Enum):
     """Types of semantic nodes."""
+
     FUNCTION = "function"
     HTTP_HANDLER = "http_handler"
     EVENT_HANDLER = "event_handler"
@@ -26,6 +27,7 @@ class NodeType(str, Enum):
 
 class AuditLevel(str, Enum):
     """Audit logging levels."""
+
     NONE = "none"
     BASIC = "basic"
     DETAILED = "detailed"
@@ -33,6 +35,7 @@ class AuditLevel(str, Enum):
 
 class LogLevel(str, Enum):
     """Logging levels."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -42,6 +45,7 @@ class LogLevel(str, Enum):
 
 class MetricType(str, Enum):
     """Types of metrics."""
+
     COUNTER = "counter"
     GAUGE = "gauge"
     HISTOGRAM = "histogram"
@@ -49,6 +53,7 @@ class MetricType(str, Enum):
 
 class AlertSeverity(str, Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -57,6 +62,7 @@ class AlertSeverity(str, Enum):
 
 class ChangelogEntry(BaseModel):
     """A single changelog entry."""
+
     version: str
     date: str
     changes: str
@@ -64,6 +70,7 @@ class ChangelogEntry(BaseModel):
 
 class Metadata(BaseModel):
     """Node metadata."""
+
     author: str | None = None
     created: datetime | None = None
     version: str | None = None
@@ -75,6 +82,7 @@ class Metadata(BaseModel):
 
 class InputSpec(BaseModel):
     """Specification for a single input parameter."""
+
     type: str
     required: bool = True
     constraints: list[str] = Field(default_factory=list)
@@ -84,6 +92,7 @@ class InputSpec(BaseModel):
 
 class OutputField(BaseModel):
     """Specification for an output field."""
+
     type: str
     description: str | None = None
     values: list[str] | None = None  # For enum types
@@ -92,12 +101,14 @@ class OutputField(BaseModel):
 
 class Outputs(BaseModel):
     """Output specification with success and error cases."""
+
     success: dict[str, Any] = Field(default_factory=dict)
     error: dict[str, Any] = Field(default_factory=dict)
 
 
 class CustomType(BaseModel):
     """Custom type definition."""
+
     base: str | None = None
     fields: dict[str, Any] = Field(default_factory=dict)
     constraints: list[str] = Field(default_factory=list)
@@ -105,6 +116,7 @@ class CustomType(BaseModel):
 
 class Contracts(BaseModel):
     """Formal contracts for verification."""
+
     preconditions: list[str] = Field(default_factory=list)
     postconditions: list[str] = Field(default_factory=list)
     invariants: list[str] = Field(default_factory=list)
@@ -112,6 +124,7 @@ class Contracts(BaseModel):
 
 class RetryPolicy(BaseModel):
     """Retry policy for operations."""
+
     max_attempts: int = 3
     backoff: str = "exponential"
     backoff_base: int = 2
@@ -120,6 +133,7 @@ class RetryPolicy(BaseModel):
 
 class FlowStep(BaseModel):
     """A single step in the execution flow."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     step: str
@@ -143,9 +157,9 @@ class FlowStep(BaseModel):
     return_error: dict[str, Any] | None = None
 
 
-
 class ErrorHandler(BaseModel):
     """Error handling configuration."""
+
     action: str
     max_retries: int | None = None
     notify: str | list[str] | None = None
@@ -156,15 +170,16 @@ class ErrorHandler(BaseModel):
 
 class RateLimit(BaseModel):
     """Rate limiting configuration."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     per_user: str | None = None
     global_: str | None = Field(default=None, alias="global")
 
 
-
 class Performance(BaseModel):
     """Performance requirements."""
+
     expected_latency_ms: int | None = None
     p99_latency_ms: int | None = None
     max_latency_ms: int | None = None
@@ -176,6 +191,7 @@ class Performance(BaseModel):
 
 class Security(BaseModel):
     """Security configuration."""
+
     capabilities_required: list[str] = Field(default_factory=list)
     denied_capabilities: list[str] = Field(default_factory=list)
     sensitive_data: list[str] = Field(default_factory=list)
@@ -185,6 +201,7 @@ class Security(BaseModel):
 
 class Metric(BaseModel):
     """Metric definition."""
+
     name: str
     type: MetricType
     labels: list[str] = Field(default_factory=list)
@@ -193,6 +210,7 @@ class Metric(BaseModel):
 
 class Alert(BaseModel):
     """Alert definition."""
+
     condition: str
     severity: AlertSeverity
     notify: list[str] = Field(default_factory=list)
@@ -200,12 +218,14 @@ class Alert(BaseModel):
 
 class Tracing(BaseModel):
     """Tracing configuration."""
+
     enabled: bool = False
     sample_rate: float = 0.1
 
 
 class Logging(BaseModel):
     """Logging configuration."""
+
     level: LogLevel = LogLevel.INFO
     structured: bool = True
     include_request_id: bool = True
@@ -213,6 +233,7 @@ class Logging(BaseModel):
 
 class Observability(BaseModel):
     """Observability configuration."""
+
     metrics: list[Metric] = Field(default_factory=list)
     alerts: list[Alert] = Field(default_factory=list)
     tracing: Tracing = Field(default_factory=Tracing)
@@ -221,6 +242,7 @@ class Observability(BaseModel):
 
 class PropertyTest(BaseModel):
     """Property-based test definition."""
+
     property: str
     description: str | None = None
     strategy: str = "hypothesis"
@@ -230,6 +252,7 @@ class PropertyTest(BaseModel):
 
 class TestCase(BaseModel):
     """Test case definition."""
+
     name: str
     description: str | None = None
     inputs: dict[str, Any] = Field(default_factory=dict)
@@ -239,12 +262,14 @@ class TestCase(BaseModel):
 
 class DifferentialTests(BaseModel):
     """Differential testing configuration."""
+
     enabled: bool = True
     sample_size: int = 10000
 
 
 class Testing(BaseModel):
     """Testing configuration."""
+
     property_tests: list[PropertyTest] = Field(default_factory=list)
     test_cases: list[TestCase] = Field(default_factory=list)
     differential_tests: DifferentialTests = Field(default_factory=DifferentialTests)
@@ -252,12 +277,14 @@ class Testing(BaseModel):
 
 class Example(BaseModel):
     """Documentation example."""
+
     title: str
     code: str
 
 
 class Documentation(BaseModel):
     """Documentation configuration."""
+
     examples: list[Example] = Field(default_factory=list)
     related_nodes: list[str] = Field(default_factory=list)
     migration_notes: str | None = None
@@ -265,6 +292,7 @@ class Documentation(BaseModel):
 
 class VesperNode(BaseModel):
     """Complete Vesper semantic node."""
+
     node_id: str
     type: NodeType
     intent: str
@@ -295,6 +323,7 @@ class VesperNode(BaseModel):
 
 class ValidationError(BaseModel):
     """A single validation error."""
+
     path: str
     message: str
     severity: str = "error"
@@ -302,6 +331,7 @@ class ValidationError(BaseModel):
 
 class ValidationResult(BaseModel):
     """Result of validating a Vesper node."""
+
     valid: bool
     errors: list[ValidationError] = Field(default_factory=list)
     warnings: list[ValidationError] = Field(default_factory=list)
@@ -313,5 +343,6 @@ class ValidationResult(BaseModel):
 
     def add_warning(self, path: str, message: str) -> None:
         """Add a warning to the validation result."""
-        self.warnings.append(ValidationError(path=path, message=message, severity="warning"))
-
+        self.warnings.append(
+            ValidationError(path=path, message=message, severity="warning")
+        )

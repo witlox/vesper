@@ -16,8 +16,7 @@ from rich.syntax import Syntax
 from rich.table import Table
 
 from vesper.compiler import VesperCompiler
-from vesper.runtime import VesperRuntime, ExecutionMode
-
+from vesper.runtime import VesperRuntime
 
 console = Console()
 
@@ -31,8 +30,12 @@ def main() -> None:
 
 @main.command()
 @click.argument("source", type=click.Path(exists=True, path_type=Path))
-@click.option("--output", "-o", type=click.Path(path_type=Path), help="Output file path")
-@click.option("--validate-only", "-v", is_flag=True, help="Only validate, don't compile")
+@click.option(
+    "--output", "-o", type=click.Path(path_type=Path), help="Output file path"
+)
+@click.option(
+    "--validate-only", "-v", is_flag=True, help="Only validate, don't compile"
+)
 def compile(source: Path, output: Path | None, validate_only: bool) -> None:
     """Compile a Vesper specification (.vsp) to Python code."""
     compiler = VesperCompiler()
@@ -57,7 +60,7 @@ def compile(source: Path, output: Path | None, validate_only: bool) -> None:
             for warning in result.warnings:
                 console.print(f"  [yellow]⚠[/yellow] {warning.path}: {warning.message}")
 
-        console.print(f"[green]✓[/green] Validation passed")
+        console.print("[green]✓[/green] Validation passed")
 
         if validate_only:
             return
@@ -82,7 +85,9 @@ def compile(source: Path, output: Path | None, validate_only: bool) -> None:
 
 @main.command()
 @click.argument("source", type=click.Path(exists=True, path_type=Path))
-@click.option("--input", "-i", "inputs", multiple=True, help="Input values as key=value")
+@click.option(
+    "--input", "-i", "inputs", multiple=True, help="Input values as key=value"
+)
 def run(source: Path, inputs: tuple[str, ...]) -> None:
     """Run a Vesper specification with given inputs."""
     runtime = VesperRuntime()
@@ -99,7 +104,9 @@ def run(source: Path, inputs: tuple[str, ...]) -> None:
         input_dict: dict[str, str | int | float | bool] = {}
         for inp in inputs:
             if "=" not in inp:
-                console.print(f"[red]Invalid input format:[/red] {inp} (expected key=value)")
+                console.print(
+                    f"[red]Invalid input format:[/red] {inp} (expected key=value)"
+                )
                 sys.exit(1)
             key, value = inp.split("=", 1)
 
@@ -120,17 +127,17 @@ def run(source: Path, inputs: tuple[str, ...]) -> None:
         result = runtime.execute_sync(node.node_id, input_dict)
 
         if result.success:
-            console.print(Panel(
-                str(result.data),
-                title="[green]Success[/green]",
-                border_style="green"
-            ))
+            console.print(
+                Panel(
+                    str(result.data),
+                    title="[green]Success[/green]",
+                    border_style="green",
+                )
+            )
         else:
-            console.print(Panel(
-                str(result.error),
-                title="[red]Error[/red]",
-                border_style="red"
-            ))
+            console.print(
+                Panel(str(result.error), title="[red]Error[/red]", border_style="red")
+            )
             sys.exit(1)
 
         # Show metrics
@@ -152,12 +159,14 @@ def show(source: Path) -> None:
         node = compiler.parse(source)
 
         # Show node information
-        console.print(Panel(
-            f"[bold]{node.node_id}[/bold]\n\n"
-            f"[dim]Type:[/dim] {node.type.value}\n"
-            f"[dim]Intent:[/dim] {node.intent}",
-            title="Node Information"
-        ))
+        console.print(
+            Panel(
+                f"[bold]{node.node_id}[/bold]\n\n"
+                f"[dim]Type:[/dim] {node.type.value}\n"
+                f"[dim]Intent:[/dim] {node.intent}",
+                title="Node Information",
+            )
+        )
 
         # Show inputs
         if node.inputs:
@@ -305,4 +314,3 @@ def test(source: Path) -> None:
 
 if __name__ == "__main__":
     main()
-
