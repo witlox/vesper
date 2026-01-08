@@ -1,21 +1,21 @@
 [workspace]
-tracing = "0.1"
-tokio = { version = "1.0", features = ["full"] }
-thiserror = "1.0"
-serde_json = "1.0"
-serde_yaml = "0.9"
-serde = { version = "1.0", features = ["derive"] }
-[workspace.dependencies]
-
-repository = "https://github.com/witlox/vesper"
-authors = ["Witlox"]
-license = "MIT"
-edition = "2021"
-version = "0.1.0"
-[workspace.package]
-
-]
-    "vesper_jit",
-    "vesper_core",
 members = [
+    "vesper_core",
+    "vesper_jit",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Witlox"]
+repository = "https://github.com/witlox/vesper"
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+serde_json = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
 

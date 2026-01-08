@@ -7,6 +7,7 @@ use crate::types::VesperNode;
 /// Loads Vesper specification files
 pub struct VesperLoader {
     /// Base path for resolving relative imports
+    #[allow(dead_code)]
     base_path: Option<std::path::PathBuf>,
 }
 

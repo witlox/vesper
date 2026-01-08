@@ -174,7 +174,7 @@ impl SemanticExecutor {
     fn execute_validation(
         &self,
         step: &FlowStep,
-        ctx: &ExecutionContext,
+        _ctx: &ExecutionContext,
     ) -> Result<Value> {
         for guard in &step.guards {
             // TODO: Implement proper guard evaluation
@@ -348,7 +348,7 @@ impl SemanticExecutor {
     fn execute_conditional(
         &self,
         step: &FlowStep,
-        ctx: &mut ExecutionContext,
+        _ctx: &mut ExecutionContext,
     ) -> Result<Value> {
         // TODO: Implement proper condition evaluation
         let condition = step.condition.as_ref().ok_or_else(|| {
