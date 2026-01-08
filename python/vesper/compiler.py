@@ -218,7 +218,7 @@ class VesperCompiler:
         lines.append("class Success:")
         lines.append('    """Success result."""')
         success_outputs = (
-            node.outputs.success
+            node.outputs.get("success", {})
             if isinstance(node.outputs, dict)
             else (node.outputs.success if hasattr(node.outputs, "success") else {})
         )
@@ -235,7 +235,7 @@ class VesperCompiler:
         lines.append("class Error:")
         lines.append('    """Error result."""')
         error_outputs = (
-            node.outputs.error
+            node.outputs.get("error", {})
             if isinstance(node.outputs, dict)
             else (node.outputs.error if hasattr(node.outputs, "error") else {})
         )

@@ -396,7 +396,7 @@ class VesperGenerator:
 
     def _extract_error_codes(self, node: VesperNode) -> list[str]:
         """Extract possible error codes from the node."""
-        codes = set()
+        codes: set[str] = set()
 
         # From error handling config
         if node.error_handling:
