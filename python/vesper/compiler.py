@@ -63,12 +63,22 @@ class VesperCompiler:
         Raises:
             ValueError: If parsing fails
         """
-        if isinstance(source, Path) or (
-            isinstance(source, str) and Path(source).exists()
-        ):
-            path = Path(source)
+        if isinstance(source, Path):
+            path = source
             with open(path) as f:
                 content = f.read()
+        elif isinstance(source, str) and "\n" not in source and len(source) < 256:
+            # Only check if it's a file if it looks like a path (no newlines, reasonable length)
+            try:
+                path = Path(source)
+                if path.exists():
+                    with open(path) as f:
+                        content = f.read()
+                else:
+                    content = source
+            except (OSError, ValueError):
+                # If path operations fail, treat as YAML content
+                content = source
         else:
             content = source
 
