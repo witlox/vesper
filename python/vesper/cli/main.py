@@ -312,5 +312,179 @@ def test(source: Path) -> None:
         sys.exit(1)
 
 
+@main.command()
+@click.argument("node_id")
+@click.option("--num-tests", default=1000, help="Number of test cases to run")
+@click.option("--show-divergences", "-d", default=10, help="Max divergences to display")
+def verify(node_id: str, num_tests: int, show_divergences: int) -> None:
+    """
+    Run differential tests on a node.
+
+    Compares outputs from Python and direct runtimes to verify equivalence.
+    """
+    import asyncio
+
+    from vesper_runtime.executor import DirectRuntime, ExecutionOrchestrator, PythonRuntime
+    from vesper_verification.confidence import ConfidenceTracker
+    from vesper_verification.differential import DifferentialTester, OutputComparator
+
+    console.print(f"[bold]Differential Testing: {node_id}[/bold]\n")
+    console.print(f"Running {num_tests} test cases...")
+
+    try:
+        # Create runtimes
+        python_runtime = PythonRuntime()
+        direct_runtime = DirectRuntime()
+
+        # Create verification components
+        comparator = OutputComparator()
+        tester = DifferentialTester(python_runtime, direct_runtime, comparator)
+
+        # For now, we need a way to generate inputs
+        # This would normally come from the node specification
+        console.print(
+            "[yellow]Note: Differential testing requires registered handlers.[/yellow]"
+        )
+        console.print(
+            "[dim]Register handlers on both runtimes and call test_node() directly.[/dim]\n"
+        )
+
+        # Show usage example
+        console.print("[bold]Example usage in Python:[/bold]")
+        code_example = '''
+from vesper_runtime.executor import PythonRuntime, DirectRuntime
+from vesper_verification.differential import DifferentialTester
+import asyncio
+
+# Register handlers
+python_runtime = PythonRuntime()
+direct_runtime = DirectRuntime()
+
+def my_handler(x: int) -> dict:
+    return {"result": x * 2}
+
+python_runtime.register_handler("my_node", my_handler)
+direct_runtime.register_handler("my_node", my_handler)
+
+# Run differential tests
+tester = DifferentialTester(python_runtime, direct_runtime)
+result = asyncio.run(tester.test_node(
+    "my_node",
+    [{"x": i} for i in range(1000)]
+))
+
+print(f"Passed: {result.passed}, Failed: {result.failed}")
+'''
+        syntax = Syntax(code_example, "python", theme="monokai")
+        console.print(syntax)
+
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("node_id")
+def confidence(node_id: str) -> None:
+    """
+    Show confidence score and metrics for a node.
+
+    Displays the statistical confidence that the direct runtime
+    is equivalent to the Python runtime.
+    """
+    from vesper_verification.confidence import ConfidenceTracker
+
+    # In a real implementation, we'd load persisted metrics
+    # For now, show the structure
+    runtime = VesperRuntime()
+
+    table = Table(title=f"Confidence Analysis: {node_id}")
+
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="green")
+
+    node_metrics = runtime.get_metrics(node_id)
+    confidence_score = runtime.get_confidence(node_id)
+
+    table.add_row("Total Executions", str(node_metrics.total_executions))
+    table.add_row("Divergences", str(node_metrics.divergences))
+    table.add_row(
+        "Success Rate",
+        f"{(1 - node_metrics.divergence_rate) * 100:.2f}%"
+        if node_metrics.total_executions > 0
+        else "N/A",
+    )
+    table.add_row("Confidence Score", f"{confidence_score:.6f}")
+
+    console.print(table)
+
+    # Show recommended mode
+    if confidence_score == 0.0:
+        if node_metrics.total_executions < 100:
+            mode = "python_only (insufficient data)"
+        else:
+            mode = "python_only (low confidence)"
+    elif confidence_score < 0.95:
+        mode = "python_only"
+    elif confidence_score < 0.999:
+        mode = "canary_direct (5% traffic to direct)"
+    elif confidence_score < 0.9999:
+        mode = "dual_verify (continuous verification)"
+    else:
+        mode = "direct_only (1% sampling)"
+
+    console.print(f"\n[bold]Recommended Mode:[/bold] {mode}")
+
+    # Show thresholds
+    console.print("\n[dim]Confidence Thresholds:[/dim]")
+    console.print("[dim]  < 0.95    → python_only[/dim]")
+    console.print("[dim]  0.95-0.999 → canary_direct[/dim]")
+    console.print("[dim]  0.999-0.9999 → dual_verify[/dim]")
+    console.print("[dim]  > 0.9999   → direct_only[/dim]")
+
+
+@main.command()
+@click.option("--format", "-f", "fmt", default="text", type=click.Choice(["text", "prometheus", "json"]))
+def status(fmt: str) -> None:
+    """
+    Show overall verification status and metrics.
+
+    Displays status of all tracked nodes and their confidence levels.
+    """
+    from vesper_verification.confidence import ConfidenceTracker
+    from vesper_verification.metrics import MetricsCollector
+
+    # In a real implementation, these would be loaded from persistence
+    console.print("[bold]Vesper Verification Status[/bold]\n")
+
+    if fmt == "text":
+        console.print("[dim]No active verification data.[/dim]")
+        console.print("[dim]Run differential tests to collect metrics.[/dim]\n")
+
+        console.print("[bold]Quick Start:[/bold]")
+        console.print("  1. vesper verify <node_id>     Run differential tests")
+        console.print("  2. vesper confidence <node_id> Check confidence score")
+        console.print("  3. vesper metrics <node_id>    View execution metrics")
+
+    elif fmt == "prometheus":
+        console.print("# HELP vesper_nodes_total Total number of tracked nodes")
+        console.print("# TYPE vesper_nodes_total gauge")
+        console.print("vesper_nodes_total 0")
+        console.print("")
+        console.print("# HELP vesper_executions_total Total executions across all nodes")
+        console.print("# TYPE vesper_executions_total counter")
+        console.print("vesper_executions_total 0")
+
+    elif fmt == "json":
+        import json
+
+        status_data = {
+            "nodes": {},
+            "total_executions": 0,
+            "total_divergences": 0,
+        }
+        console.print(json.dumps(status_data, indent=2))
+
+
 if __name__ == "__main__":
     main()

@@ -54,10 +54,10 @@ Repository = "https://github.com/witlox/vesper"
 Issues = "https://github.com/witlox/vesper/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["python/vesper"]
+packages = ["python/vesper", "python/vesper_runtime", "python/vesper_verification"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "python/tests"]
+testpaths = ["tests", "python/tests", "examples"]
 asyncio_mode = "auto"
 
 [tool.black]
