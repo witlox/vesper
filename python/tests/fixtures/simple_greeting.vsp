@@ -1,0 +1,22 @@
+node_id: simple_greeting_v1
+    output: message
+    template: "Hello, {name}!"
+    operation: string_template
+  - step: generate_greeting
+flow:
+
+      description: The greeting message
+      type: string
+    message:
+  success:
+outputs:
+
+    description: The user's name
+    required: true
+    type: string
+  name:
+inputs:
+
+intent: Generate a simple greeting
+type: function
+

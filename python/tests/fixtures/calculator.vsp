@@ -1,0 +1,63 @@
+node_id: calculator_v1
+type: function
+intent: Perform basic arithmetic operations
+
+metadata:
+  author: vesper-team
+  version: 1.0.0
+  description: |
+    A simple calculator that adds two numbers.
+    Demonstrates contracts and arithmetic operations.
+  tags: [example, math, beginner]
+
+inputs:
+  a:
+    type: integer
+    required: true
+    description: First operand
+    constraints:
+      - ">= 0"
+
+  b:
+    type: integer
+    required: true
+    description: Second operand
+    constraints:
+      - ">= 0"
+
+outputs:
+  success:
+    result:
+      type: integer
+      description: Sum of the two operands
+
+contracts:
+  preconditions:
+    - "a >= 0"
+    - "b >= 0"
+  postconditions:
+    - "result == a + b"
+    - "result >= 0"
+
+flow:
+  - step: add_numbers
+    operation: arithmetic
+    expression: "a + b"
+    output: result
+
+testing:
+  test_cases:
+    - name: basic_addition
+      inputs:
+        a: 2
+        b: 3
+      expected_output:
+        result: 5
+
+    - name: add_zero
+      inputs:
+        a: 5
+        b: 0
+      expected_output:
+        result: 5
+

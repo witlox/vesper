@@ -37,6 +37,7 @@ class LogLevel(str, Enum):
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
+    CRITICAL = "critical"
 
 
 class MetricType(str, Enum):

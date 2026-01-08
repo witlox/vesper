@@ -1,0 +1,126 @@
+node_id: user_validator_v1
+type: function
+intent: Validate user registration data
+
+metadata:
+  author: vesper-team
+  version: 1.0.0
+  description: |
+    Validates user registration input including email and age.
+    Demonstrates validation steps and error handling.
+  tags: [example, validation, intermediate]
+
+inputs:
+  email:
+    type: string
+    required: true
+    description: User's email address
+    constraints:
+      - non_empty
+
+  age:
+    type: integer
+    required: true
+    description: User's age in years
+    constraints:
+      - ">= 0"
+      - "<= 150"
+
+  username:
+    type: string
+    required: true
+    description: Desired username
+    constraints:
+      - non_empty
+
+outputs:
+  success:
+    valid:
+      type: boolean
+      description: Whether the input is valid
+    user_id:
+      type: string
+      description: Generated user ID
+
+  error:
+    error_code:
+      type: enum
+      values: [invalid_email, invalid_age, invalid_username]
+    message:
+      type: string
+
+contracts:
+  preconditions:
+    - "email != ''"
+    - "username != ''"
+    - "age >= 0"
+  postconditions:
+    - "valid OR error_code != ''"
+
+flow:
+  - step: validate_email
+    operation: validation
+    description: Check email is not empty
+    guards:
+      - "email != ''"
+    on_failure:
+      return_error:
+        error_code: invalid_email
+        message: "Email cannot be empty"
+
+  - step: validate_age
+    operation: validation
+    description: Check age is within valid range
+    guards:
+      - "age >= 13"
+      - "age <= 120"
+    on_failure:
+      return_error:
+        error_code: invalid_age
+        message: "Age must be between 13 and 120"
+
+  - step: validate_username
+    operation: validation
+    description: Check username is not empty
+    guards:
+      - "username != ''"
+    on_failure:
+      return_error:
+        error_code: invalid_username
+        message: "Username cannot be empty"
+
+  - step: generate_user_id
+    operation: string_template
+    template: "user_{username}"
+    output: user_id
+
+  - step: return_success
+    operation: return
+    return_success:
+      valid: true
+      user_id: "{user_id}"
+
+security:
+  audit_level: basic
+  sensitive_data:
+    - email
+
+testing:
+  test_cases:
+    - name: valid_user
+      inputs:
+        email: "test@example.com"
+        age: 25
+        username: "testuser"
+      expected_output:
+        valid: true
+
+    - name: invalid_age
+      inputs:
+        email: "test@example.com"
+        age: 5
+        username: "testuser"
+      expected_output:
+        success: false
+        error_code: invalid_age
+
