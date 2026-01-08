@@ -18,25 +18,25 @@ This document describes the technical architecture of the Vesper Framework.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Developer Interface                      │
+│                     Developer Interface                     │
 │  (CLI, IDE plugins, Web dashboard)                          │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   Vesper Compiler & Tools                       │
+│                   Vesper Compiler & Tools                   │
 │  - Parser (YAML → AST)                                      │
-│  - Validator (contract checking)                             │
-│  - Code Generator (Vesper → Python)                            │
-│  - Optimizer (semantic transformations)                      │
+│  - Validator (contract checking)                            │
+│  - Code Generator (Vesper → Python)                         │
+│  - Optimizer (semantic transformations)                     │
 └────────────────────────┬────────────────────────────────────┘
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                  Vesper Repository                      │
+│                    Vesper Repository                        │
 │  - Version control for .vsp files                           │
-│  - Dependency resolution                                     │
-│  - Capability registry                                       │
+│  - Dependency resolution                                    │
+│  - Capability registry                                      │
 └────────────────────────┬────────────────────────────────────┘
                          │
            ┌─────────────┴──────────────┐
@@ -58,14 +58,14 @@ This document describes the technical architecture of the Vesper Framework.
 │ └──────────────────┘ │    │ └──────────────────┘ │
 └──────────────────────┘    └──────────────────────┘
            │                            │
-           └──────────┬─────────────────┘
-                      ▼
+           └────────────┬───────────────┘
+                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Verification & Monitoring System                │
-│  - Differential testing                                      │
-│  - Metrics collection                                        │
-│  - Confidence calculation                                    │
-│  - Traffic routing decisions                                 │
+│              Verification & Monitoring System               │
+│  - Differential testing                                     │
+│  - Metrics collection                                       │
+│  - Confidence calculation                                   │
+│  - Traffic routing decisions                                │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -362,7 +362,7 @@ def test_payment_idempotency(amount, user_id):
 
 ## Migration Strategy
 
-### Phase 1: Foundation (Months 0-6)
+### Phase 1: Foundation
 
 **Deliverables**:
 - Vesper spec v0.1
@@ -372,7 +372,7 @@ def test_payment_idempotency(amount, user_id):
 
 **Milestone**: First semantic node running in production (Python only)
 
-### Phase 2: Validation (Months 6-12)
+### Phase 2: Validation
 
 **Deliverables**:
 - Direct runtime core (Rust)
@@ -382,7 +382,7 @@ def test_payment_idempotency(amount, user_id):
 
 **Milestone**: 99.9% accuracy on critical nodes in shadow mode
 
-### Phase 3: Canary (Months 12-18)
+### Phase 3: Canary
 
 **Deliverables**:
 - Canary routing (1-5% traffic)
@@ -392,7 +392,7 @@ def test_payment_idempotency(amount, user_id):
 
 **Milestone**: 10 nodes with 5% canary traffic
 
-### Phase 4: Gradual Migration (Months 18-24)
+### Phase 4: Gradual Migration
 
 **Deliverables**:
 - Confidence-based routing
@@ -402,15 +402,13 @@ def test_payment_idempotency(amount, user_id):
 
 **Milestone**: 50% of traffic on direct runtime
 
-### Phase 5: Majority Direct (Months 24-36)
+### Phase 5: Majority Direct
 
 **Deliverables**:
 - 80%+ nodes on direct runtime
 - Python runtime maintained for edge cases
 - Comprehensive monitoring
 - Performance optimization
-
-**Milestone**: Decision point - keep or drop Python path?
 
 ## Runtime Architecture
 
