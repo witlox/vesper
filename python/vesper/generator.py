@@ -329,7 +329,8 @@ class VesperGenerator:
             }
             if var in keywords:
                 return var
-            return f'context["{var}"]'
+            # Use single quotes for dict keys for Python 3.11 f-string compatibility
+            return f"context['{var}']"
 
         return re.sub(r"\b([a-zA-Z_]\w*)\b", replace_var, expression)
 
@@ -489,7 +490,8 @@ class VesperGenerator:
                 error = step.on_failure["return_error"]
                 error_code = error.get("error_code", "validation_failed")
                 message = error.get("message", f"Validation failed: {guard}")
-                lines.append('    context["_error"] = ErrorResult(')
+                # Use single quotes for dict keys for Python 3.11 f-string compatibility
+                lines.append("    context['_error'] = ErrorResult(")
                 lines.append(f'        error_code="{error_code}",')
                 lines.append(f'        message="{message}"')
                 lines.append("    )")
@@ -505,7 +507,8 @@ class VesperGenerator:
         output_var = step.output or "result"
 
         # Convert {var} to Python f-string format
-        py_template = re.sub(r"\{(\w+)\}", r'{context["\1"]}', template)
+        # Use single quotes for dict keys to avoid quote conflicts in f-strings (Python 3.11 compatibility)
+        py_template = re.sub(r"\{(\w+)\}", r"{context['\1']}", template)
 
         return [
             f'context["{output_var}"] = f"{py_template}"',
@@ -523,7 +526,8 @@ class VesperGenerator:
             # Don't replace Python keywords or numeric literals
             if var in {"and", "or", "not", "True", "False", "None", "in", "is"}:
                 return var
-            return f'context["{var}"]'
+            # Use single quotes for dict keys for Python 3.11 f-string compatibility
+            return f"context['{var}']"
 
         py_expr = re.sub(r"\b([a-zA-Z_]\w*)\b", replace_var, expression)
 
@@ -578,13 +582,14 @@ class VesperGenerator:
                     and value.endswith("}")
                 ):
                     var_name = value[1:-1]
-                    lines.append(f'context["{key}"] = context.get("{var_name}")')
+                    # Use single quotes for dict keys for Python 3.11 f-string compatibility
+                    lines.append(f"context['{key}'] = context.get('{var_name}')")
                 else:
-                    lines.append(f'context["{key}"] = {repr(value)}')
+                    lines.append(f"context['{key}'] = {repr(value)}")
         elif step.return_error:
             error_code = step.return_error.get("error_code", "unknown")
             message = step.return_error.get("message", "An error occurred")
-            lines.append('context["_error"] = ErrorResult(')
+            lines.append("context['_error'] = ErrorResult(")
             lines.append(f'    error_code="{error_code}",')
             lines.append(f'    message="{message}"')
             lines.append(")")
@@ -598,7 +603,7 @@ class VesperGenerator:
         return [
             f"# Database query: {query}",
             "# TODO: Inject database client via dependency injection",
-            'context["query_result"] = None  # Placeholder',
+            "context['query_result'] = None  # Placeholder",
         ]
 
     def _generate_db_write_code(self, step: FlowStep) -> list[str]:
@@ -620,7 +625,7 @@ class VesperGenerator:
         return [
             f"# External API call to {provider}: {method} {endpoint}",
             "# TODO: Inject HTTP client via dependency injection",
-            'context["api_response"] = None  # Placeholder',
+            "context['api_response'] = None  # Placeholder",
         ]
 
     def _generate_event_publish_code(self, step: FlowStep) -> list[str]:
