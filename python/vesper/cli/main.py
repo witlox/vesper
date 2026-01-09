@@ -322,10 +322,11 @@ def verify(node_id: str, num_tests: int, show_divergences: int) -> None:
 
     Compares outputs from Python and direct runtimes to verify equivalence.
     """
-    import asyncio
 
-    from vesper_runtime.executor import DirectRuntime, ExecutionOrchestrator, PythonRuntime
-    from vesper_verification.confidence import ConfidenceTracker
+    from vesper_runtime.executor import (
+        DirectRuntime,
+        PythonRuntime,
+    )
     from vesper_verification.differential import DifferentialTester, OutputComparator
 
     console.print(f"[bold]Differential Testing: {node_id}[/bold]\n")
@@ -338,7 +339,7 @@ def verify(node_id: str, num_tests: int, show_divergences: int) -> None:
 
         # Create verification components
         comparator = OutputComparator()
-        tester = DifferentialTester(python_runtime, direct_runtime, comparator)
+        DifferentialTester(python_runtime, direct_runtime, comparator)
 
         # For now, we need a way to generate inputs
         # This would normally come from the node specification
@@ -351,7 +352,7 @@ def verify(node_id: str, num_tests: int, show_divergences: int) -> None:
 
         # Show usage example
         console.print("[bold]Example usage in Python:[/bold]")
-        code_example = '''
+        code_example = """
 from vesper_runtime.executor import PythonRuntime, DirectRuntime
 from vesper_verification.differential import DifferentialTester
 import asyncio
@@ -374,7 +375,7 @@ result = asyncio.run(tester.test_node(
 ))
 
 print(f"Passed: {result.passed}, Failed: {result.failed}")
-'''
+"""
         syntax = Syntax(code_example, "python", theme="monokai")
         console.print(syntax)
 
@@ -392,7 +393,6 @@ def confidence(node_id: str) -> None:
     Displays the statistical confidence that the direct runtime
     is equivalent to the Python runtime.
     """
-    from vesper_verification.confidence import ConfidenceTracker
 
     # In a real implementation, we'd load persisted metrics
     # For now, show the structure
@@ -410,9 +410,11 @@ def confidence(node_id: str) -> None:
     table.add_row("Divergences", str(node_metrics.divergences))
     table.add_row(
         "Success Rate",
-        f"{(1 - node_metrics.divergence_rate) * 100:.2f}%"
-        if node_metrics.total_executions > 0
-        else "N/A",
+        (
+            f"{(1 - node_metrics.divergence_rate) * 100:.2f}%"
+            if node_metrics.total_executions > 0
+            else "N/A"
+        ),
     )
     table.add_row("Confidence Score", f"{confidence_score:.6f}")
 
@@ -444,15 +446,19 @@ def confidence(node_id: str) -> None:
 
 
 @main.command()
-@click.option("--format", "-f", "fmt", default="text", type=click.Choice(["text", "prometheus", "json"]))
+@click.option(
+    "--format",
+    "-f",
+    "fmt",
+    default="text",
+    type=click.Choice(["text", "prometheus", "json"]),
+)
 def status(fmt: str) -> None:
     """
     Show overall verification status and metrics.
 
     Displays status of all tracked nodes and their confidence levels.
     """
-    from vesper_verification.confidence import ConfidenceTracker
-    from vesper_verification.metrics import MetricsCollector
 
     # In a real implementation, these would be loaded from persistence
     console.print("[bold]Vesper Verification Status[/bold]\n")
@@ -471,7 +477,9 @@ def status(fmt: str) -> None:
         console.print("# TYPE vesper_nodes_total gauge")
         console.print("vesper_nodes_total 0")
         console.print("")
-        console.print("# HELP vesper_executions_total Total executions across all nodes")
+        console.print(
+            "# HELP vesper_executions_total Total executions across all nodes"
+        )
         console.print("# TYPE vesper_executions_total counter")
         console.print("vesper_executions_total 0")
 

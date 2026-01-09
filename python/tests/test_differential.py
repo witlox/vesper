@@ -2,16 +2,13 @@
 Tests for Differential Testing
 """
 
-import asyncio
 from decimal import Decimal
 
 import pytest
-
 from vesper_verification.differential import (
     DifferentialTester,
     Divergence,
     OutputComparator,
-    DiffTestResult,
 )
 
 
@@ -375,4 +372,3 @@ class TestDivergence:
         assert d["inputs"] == {"x": 1}
         assert d["python_output"] == {"result": 2}
         assert d["direct_output"] == {"result": 3}
-

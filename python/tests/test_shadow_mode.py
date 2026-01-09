@@ -5,7 +5,6 @@ Tests for Shadow Mode Execution
 import asyncio
 
 import pytest
-
 from vesper_verification.confidence import ConfidenceTracker
 from vesper_verification.differential import OutputComparator
 from vesper_verification.shadow_mode import ExecutionResult, ShadowExecutor
@@ -57,6 +56,7 @@ class TestShadowExecutor:
         )
 
         import time
+
         start = time.perf_counter()
 
         # This should return immediately
@@ -267,4 +267,3 @@ class TestExecutionResult:
         d = result.to_dict()
         assert d["success"] is False
         assert d["error"] == "test error"
-

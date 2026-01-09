@@ -2,16 +2,13 @@
 Integration Tests for Vesper Verification Framework
 """
 
-import asyncio
 from decimal import Decimal
 
 import pytest
-
 from vesper_runtime.executor import (
     DirectRuntime,
     DualExecutionResult,
     ExecutionOrchestrator,
-    ExecutionResult,
     PythonRuntime,
 )
 from vesper_verification.confidence import ConfidenceTracker
@@ -145,7 +142,7 @@ class TestVerificationIntegration:
         await self.shadow_executor.wait_for_pending(timeout=1.0)
 
         # Shadow should have recorded the execution
-        metrics = self.confidence_tracker.get_metrics("simple_node")
+        self.confidence_tracker.get_metrics("simple_node")
         # Note: The shadow execution records to confidence tracker
         # The main execution may or may not depending on implementation
 
@@ -169,6 +166,7 @@ class TestVerificationIntegration:
     @pytest.mark.asyncio
     async def test_divergence_reduces_confidence(self):
         """Divergences reduce confidence score."""
+
         # Register initially matching handlers
         def python_handler(value: int) -> dict:
             return {"result": value * 2}
@@ -337,7 +335,7 @@ class TestEndToEndVerification:
         tracker = ConfidenceTracker()
         comparator = OutputComparator()
 
-        orchestrator = ExecutionOrchestrator(
+        ExecutionOrchestrator(
             python_runtime=runtime,
             direct_runtime=direct_runtime,
             confidence_tracker=tracker,
@@ -363,12 +361,21 @@ class TestEndToEndVerification:
             c = random.randint(-100, 100)
 
             # a * (b + c) should equal a*b + a*c
-            bc = (await runtime.execute("calculator", {"a": b, "b": c, "op": "add"}))["result"]
-            left = (await runtime.execute("calculator", {"a": a, "b": bc, "op": "mul"}))["result"]
+            bc = (await runtime.execute("calculator", {"a": b, "b": c, "op": "add"}))[
+                "result"
+            ]
+            left = (
+                await runtime.execute("calculator", {"a": a, "b": bc, "op": "mul"})
+            )["result"]
 
-            ab = (await runtime.execute("calculator", {"a": a, "b": b, "op": "mul"}))["result"]
-            ac = (await runtime.execute("calculator", {"a": a, "b": c, "op": "mul"}))["result"]
-            right = (await runtime.execute("calculator", {"a": ab, "b": ac, "op": "add"}))["result"]
+            ab = (await runtime.execute("calculator", {"a": a, "b": b, "op": "mul"}))[
+                "result"
+            ]
+            ac = (await runtime.execute("calculator", {"a": a, "b": c, "op": "mul"}))[
+                "result"
+            ]
+            right = (
+                await runtime.execute("calculator", {"a": ab, "b": ac, "op": "add"})
+            )["result"]
 
             assert left == right, f"Distributivity failed for {a}, {b}, {c}"
-

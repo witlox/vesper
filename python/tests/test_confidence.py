@@ -2,7 +2,6 @@
 Tests for Confidence Calculation
 """
 
-import pytest
 from vesper_verification.confidence import ConfidenceTracker, RuntimeMetrics
 
 
@@ -238,4 +237,3 @@ class TestConfidenceThresholds:
 
         # Larger samples should have higher (tighter) confidence bounds
         assert large >= medium >= small
-
