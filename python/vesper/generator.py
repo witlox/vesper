@@ -290,6 +290,10 @@ class VesperGenerator:
         """Translate a Vesper condition to Python."""
         result = condition
 
+        # Replace multi-word patterns first (before single-word replacements that might interfere)
+        result = re.sub(r"\bIS NOT NULL\b", "is not None", result, flags=re.IGNORECASE)
+        result = re.sub(r"\bIS NULL\b", "is None", result, flags=re.IGNORECASE)
+
         # Replace logical operators
         result = re.sub(r"\bAND\b", "and", result, flags=re.IGNORECASE)
         result = re.sub(r"\bOR\b", "or", result, flags=re.IGNORECASE)
@@ -297,8 +301,6 @@ class VesperGenerator:
 
         # Replace comparison operators
         result = re.sub(r"\bIN\b", "in", result, flags=re.IGNORECASE)
-        result = re.sub(r"\bIS NOT NULL\b", "is not None", result, flags=re.IGNORECASE)
-        result = re.sub(r"\bIS NULL\b", "is None", result, flags=re.IGNORECASE)
 
         # Replace string literals
         result = result.replace("''", '""')

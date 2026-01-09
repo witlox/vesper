@@ -378,6 +378,12 @@ class VesperCompiler:
 
         # Basic translations
         result = condition
+
+        # Multi-word patterns first (before single-word replacements that might interfere)
+        result = regex.sub(r"\bIS NOT NULL\b", "is not None", result, flags=regex.IGNORECASE)
+        result = regex.sub(r"\bIS NULL\b", "is None", result, flags=regex.IGNORECASE)
+
+        # Single-word logical operators
         result = regex.sub(r"\bAND\b", "and", result)
         result = regex.sub(r"\bOR\b", "or", result)
         result = regex.sub(r"\bNOT\b", "not", result)
