@@ -3,11 +3,12 @@
 **Verified execution bridging traditional code and LLM-native runtimes**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build](https://github.com/witlox/vesper/actions/workflows/build.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/build.yml)
 [![Python Tests](https://github.com/witlox/vesper/actions/workflows/python-test.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/python-test.yml)
 [![Python Lint](https://github.com/witlox/vesper/actions/workflows/python-lint.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/python-lint.yml)
 [![Rust Tests](https://github.com/witlox/vesper/actions/workflows/rust-test.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/rust-test.yml)
 [![Rust Lint](https://github.com/witlox/vesper/actions/workflows/rust-lint.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/rust-lint.yml)
-[![Build](https://github.com/witlox/vesper/actions/workflows/build.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/build.yml)
+[![Integration Tests](https://github.com/witlox/vesper/actions/workflows/integration.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/integration.yml)
 [![codecov](https://codecov.io/gh/witlox/vesper/branch/main/graph/badge.svg)](https://codecov.io/gh/witlox/vesper)
 
 ## Vision
