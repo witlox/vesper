@@ -3,11 +3,11 @@
 **Verified execution bridging traditional code and LLM-native runtimes**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Tests](https://github.com/witlox/vesper/actions/workflows/ci.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/ci.yml)
-[![Python Lint](https://img.shields.io/github/actions/workflow/status/witlox/vesper/ci.yml?label=lint)](https://github.com/witlox/vesper/actions/workflows/ci.yml)
-[![Rust Tests](https://img.shields.io/github/actions/workflow/status/witlox/vesper/ci.yml?label=rust%20tests)](https://github.com/witlox/vesper/actions/workflows/ci.yml)
-[![Rust Lint](https://img.shields.io/github/actions/workflow/status/witlox/vesper/ci.yml?label=rust%20lint)](https://github.com/witlox/vesper/actions/workflows/ci.yml)
-[![Build](https://img.shields.io/github/actions/workflow/status/witlox/vesper/ci.yml?label=build)](https://github.com/witlox/vesper/actions/workflows/ci.yml)
+[![Python Tests](https://github.com/witlox/vesper/actions/workflows/python-test.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/python-test.yml)
+[![Python Lint](https://github.com/witlox/vesper/actions/workflows/python-lint.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/python-lint.yml)
+[![Rust Tests](https://github.com/witlox/vesper/actions/workflows/rust-test.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/rust-test.yml)
+[![Rust Lint](https://github.com/witlox/vesper/actions/workflows/rust-lint.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/rust-lint.yml)
+[![Build](https://github.com/witlox/vesper/actions/workflows/build.yml/badge.svg)](https://github.com/witlox/vesper/actions/workflows/build.yml)
 [![codecov](https://codecov.io/gh/witlox/vesper/branch/main/graph/badge.svg)](https://codecov.io/gh/witlox/vesper)
 
 ## Vision

@@ -1,0 +1,54 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_run:
+    workflows: ["Python Tests", "Rust Tests"]
+    types:
+      - completed
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    # Only run after Python Tests and Rust Tests have passed
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Build Rust crates
+        working-directory: rust
+        run: cargo build --release
+
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ -v --tb=short
+        continue-on-error: true  # Integration tests may not exist yet
+
+      - name: Test CLI compilation
+        run: |
+          vesper compile examples/hello_world/hello_world.vsp --validate-only
+          vesper compile examples/payment_handler/payment_handler.vsp -o /tmp/payment_handler.py
+          python -c "import ast; ast.parse(open('/tmp/payment_handler.py').read())"
+
