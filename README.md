@@ -172,4 +172,3 @@ If you use this work in research, please cite:
 ---
 
 **Vesper** - *Guiding the transition from traditional to LLM-native software development*
-

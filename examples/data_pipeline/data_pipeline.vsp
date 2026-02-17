@@ -191,4 +191,3 @@ testing:
       expected_output:
         success: false
         error_code: invalid_date_range
-

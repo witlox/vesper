@@ -126,7 +126,7 @@ class ErrorResult:
 class ExecutionResult:
     success: SuccessResult | None = None
     error: ErrorResult | None = None
-    
+
     @property
     def is_success(self) -> bool:
         return self.success is not None
@@ -138,23 +138,23 @@ class ContractViolation(Exception):
 def greet_user_v1(name: str) -> ExecutionResult:
     """
     Generate a personalized greeting
-    
+
     Args:
         name: The user's name
-    
+
     Returns:
         ExecutionResult with the greeting message
     """
     # Precondition checks
     if not (name != ""):
         raise ContractViolation("Precondition", "name != ''")
-    
+
     try:
         context = {"name": name}
-        
+
         # Step 1: generate_greeting
         context["message"] = f'Hello, {context["name"]}!'
-        
+
         return ExecutionResult(
             success=SuccessResult(message=context.get("message"))
         )
@@ -256,4 +256,3 @@ vesper/
 ### Honest trade-offs:
 - **Pros**: Declarative, contracts are explicit, easier to verify
 - **Cons**: Additional abstraction layer, learning curve, debugging complexity
-

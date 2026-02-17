@@ -60,4 +60,3 @@ testing:
         b: 0
       expected_output:
         result: 5
-

@@ -231,4 +231,3 @@
   "title": "Vesper Specification v0.1",
   "$id": "https://github.com/witlox/vesper/spec/v0.1/schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
-

@@ -74,4 +74,3 @@ testing:
       expected_output:
         success: true
         result: 6
-

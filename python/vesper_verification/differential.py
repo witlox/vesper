@@ -11,10 +11,11 @@ import asyncio
 import logging
 import math
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any, Callable, Optional, Protocol
+from typing import Any, Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -69,46 +70,46 @@ class OutputComparator:
         self,
         python_output: dict[str, Any],
         direct_output: dict[str, Any],
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Compare two outputs for equality.
 
         Returns None if equal, dict describing differences if diverged.
         """
-        differences = self._compare_recursive(
-            python_output, direct_output, path="root"
-        )
+        differences = self._compare_recursive(python_output, direct_output, path="root")
 
         if differences:
             return {"differences": differences, "count": len(differences)}
         return None
 
-    def _compare_recursive(
-        self, v1: Any, v2: Any, path: str
-    ) -> list[dict[str, Any]]:
+    def _compare_recursive(self, v1: Any, v2: Any, path: str) -> list[dict[str, Any]]:
         """Recursively compare two values."""
         differences: list[dict[str, Any]] = []
 
         if v1 is None and v2 is None:
             return differences
         if v1 is None or v2 is None:
-            differences.append({
-                "path": path,
-                "type": "null_mismatch",
-                "python_value": v1,
-                "direct_value": v2,
-            })
+            differences.append(
+                {
+                    "path": path,
+                    "type": "null_mismatch",
+                    "python_value": v1,
+                    "direct_value": v2,
+                }
+            )
             return differences
 
         if not self._types_compatible(v1, v2):
-            differences.append({
-                "path": path,
-                "type": "type_mismatch",
-                "python_type": type(v1).__name__,
-                "direct_type": type(v2).__name__,
-                "python_value": repr(v1),
-                "direct_value": repr(v2),
-            })
+            differences.append(
+                {
+                    "path": path,
+                    "type": "type_mismatch",
+                    "python_type": type(v1).__name__,
+                    "direct_type": type(v2).__name__,
+                    "python_value": repr(v1),
+                    "direct_value": repr(v2),
+                }
+            )
             return differences
 
         if isinstance(v1, dict):
@@ -125,12 +126,14 @@ class OutputComparator:
                 differences.append(diff)
         else:
             if v1 != v2:
-                differences.append({
-                    "path": path,
-                    "type": "value_mismatch",
-                    "python_value": v1,
-                    "direct_value": v2,
-                })
+                differences.append(
+                    {
+                        "path": path,
+                        "type": "value_mismatch",
+                        "python_value": v1,
+                        "direct_value": v2,
+                    }
+                )
 
         return differences
 
@@ -145,9 +148,7 @@ class OutputComparator:
             return True
         return False
 
-    def _compare_dicts(
-        self, d1: dict, d2: dict, path: str
-    ) -> list[dict[str, Any]]:
+    def _compare_dicts(self, d1: dict, d2: dict, path: str) -> list[dict[str, Any]]:
         """Compare two dictionaries."""
         differences: list[dict[str, Any]] = []
         all_keys = set(d1.keys()) | set(d2.keys())
@@ -155,21 +156,23 @@ class OutputComparator:
         for key in all_keys:
             key_path = f"{path}.{key}"
             if key not in d1:
-                differences.append({
-                    "path": key_path,
-                    "type": "missing_in_python",
-                    "direct_value": d2[key],
-                })
-            elif key not in d2:
-                differences.append({
-                    "path": key_path,
-                    "type": "missing_in_direct",
-                    "python_value": d1[key],
-                })
-            else:
-                differences.extend(
-                    self._compare_recursive(d1[key], d2[key], key_path)
+                differences.append(
+                    {
+                        "path": key_path,
+                        "type": "missing_in_python",
+                        "direct_value": d2[key],
+                    }
                 )
+            elif key not in d2:
+                differences.append(
+                    {
+                        "path": key_path,
+                        "type": "missing_in_direct",
+                        "python_value": d1[key],
+                    }
+                )
+            else:
+                differences.extend(self._compare_recursive(d1[key], d2[key], key_path))
         return differences
 
     def _compare_lists(
@@ -179,22 +182,22 @@ class OutputComparator:
         differences: list[dict[str, Any]] = []
 
         if len(l1) != len(l2):
-            differences.append({
-                "path": path,
-                "type": "length_mismatch",
-                "python_length": len(l1),
-                "direct_length": len(l2),
-            })
+            differences.append(
+                {
+                    "path": path,
+                    "type": "length_mismatch",
+                    "python_length": len(l1),
+                    "direct_length": len(l2),
+                }
+            )
 
         for i in range(min(len(l1), len(l2))):
-            differences.extend(
-                self._compare_recursive(l1[i], l2[i], f"{path}[{i}]")
-            )
+            differences.extend(self._compare_recursive(l1[i], l2[i], f"{path}[{i}]"))
         return differences
 
     def _compare_numbers(
         self, n1: int | float | Decimal, n2: int | float | Decimal, path: str
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Compare two numbers with epsilon tolerance."""
         f1 = float(n1)
         f2 = float(n2)
@@ -241,9 +244,7 @@ class OutputComparator:
             return True
         return False
 
-    def _compare_timestamps(
-        self, t1: str, t2: str, path: str
-    ) -> Optional[dict[str, Any]]:
+    def _compare_timestamps(self, t1: str, t2: str, path: str) -> dict[str, Any] | None:
         """Compare two timestamps with tolerance."""
         try:
             dt1 = datetime.fromisoformat(t1.replace("Z", "+00:00"))
@@ -274,9 +275,7 @@ class OutputComparator:
 class RuntimeProtocol(Protocol):
     """Protocol for runtime implementations."""
 
-    async def execute(
-        self, node_id: str, inputs: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def execute(self, node_id: str, inputs: dict[str, Any]) -> dict[str, Any]:
         """Execute a node with the given inputs."""
         ...
 
@@ -313,7 +312,7 @@ class DifferentialTester:
         self,
         python_runtime: RuntimeProtocol,
         direct_runtime: RuntimeProtocol,
-        comparator: Optional[OutputComparator] = None,
+        comparator: OutputComparator | None = None,
     ) -> None:
         self.python_runtime = python_runtime
         self.direct_runtime = direct_runtime
@@ -323,7 +322,7 @@ class DifferentialTester:
         self,
         node_id: str,
         test_inputs: list[dict[str, Any]],
-        on_divergence: Optional[Callable[[Divergence], None]] = None,
+        on_divergence: Callable[[Divergence], None] | None = None,
     ) -> DiffTestResult:
         """Run differential tests on a node with provided inputs."""
         import time
@@ -356,7 +355,7 @@ class DifferentialTester:
                         python_output=python_output,
                         direct_output=direct_output,
                         diff=diff,
-                        timestamp=datetime.now(timezone.utc).isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         trace_id=str(uuid.uuid4()),
                     )
                     result.divergences.append(divergence)
@@ -365,11 +364,13 @@ class DifferentialTester:
 
             except Exception as e:
                 result.failed += 1
-                result.errors.append({
-                    "inputs": inputs,
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                })
+                result.errors.append(
+                    {
+                        "inputs": inputs,
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                    }
+                )
                 logger.warning(f"Error during differential test for {node_id}: {e}")
 
         result.duration_ms = (time.perf_counter() - start_time) * 1000
@@ -380,9 +381,8 @@ class DifferentialTester:
         node_id: str,
         input_generator: Callable[[], dict[str, Any]],
         num_tests: int = 1000,
-        on_divergence: Optional[Callable[[Divergence], None]] = None,
+        on_divergence: Callable[[Divergence], None] | None = None,
     ) -> DiffTestResult:
         """Run differential tests with randomly generated inputs."""
         test_inputs = [input_generator() for _ in range(num_tests)]
         return await self.test_node(node_id, test_inputs, on_divergence)
-

@@ -509,4 +509,3 @@ class TestPaymentHandlerDifferentialVerification:
 
         assert divergences == 0
         assert tracker.get_confidence("payment") > 0.90  # Wilson score with 100 samples
-

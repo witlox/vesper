@@ -268,15 +268,15 @@ def execute_semantic_node(
 ) -> Result:
     """
     Execute a semantic node with specified inputs.
-    
+
     Args:
         node_id: Unique identifier for the node
         inputs: Input parameters matching node schema
         mode: Execution mode (python_only, shadow_direct, etc.)
-        
+
     Returns:
         Result object with output or error
-        
+
     Raises:
         ValidationError: If inputs don't match schema
         ExecutionError: If execution fails
@@ -327,7 +327,7 @@ pub async fn execute_semantic_node(
     ///
     /// # Errors
     /// Returns error if validation fails or execution fails
-    
+
     // Implementation
 }
 
@@ -394,14 +394,14 @@ Test individual functions:
 def test_contract_validator_preconditions():
     """Test precondition validation"""
     validator = ContractValidator()
-    
+
     # Valid case
     result = validator.validate_preconditions(
         preconditions=["amount > 0"],
         context={"amount": 100}
     )
     assert result.valid
-    
+
     # Invalid case
     result = validator.validate_preconditions(
         preconditions=["amount > 0"],
@@ -420,15 +420,15 @@ def test_python_generator_end_to_end():
     """Test complete code generation pipeline"""
     # Load Vesper
     vesper_node = load_vesper_file("test_cases/hello_world.vsp")
-    
+
     # Generate Python
     generator = PythonGenerator()
     python_code = generator.generate(vesper_node)
-    
+
     # Compile and execute
     exec(python_code)
     result = hello_world_v1(name="Alice")
-    
+
     assert isinstance(result, HelloWorldSuccess)
     assert "Alice" in result.message
 ```
@@ -442,10 +442,10 @@ def test_payment_handler_differential():
     """Test payment handler produces identical outputs"""
     tester = DifferentialTester('payment_handler_v1')
     report = tester.run_tests(num_tests=1000)
-    
+
     assert report.accuracy >= 0.999, \
         f"Accuracy {report.accuracy} below threshold"
-    
+
     if report.divergences > 0:
         pytest.fail(f"Found {report.divergences} divergences")
 ```
@@ -464,19 +464,19 @@ from hypothesis import given, strategies as st
 def test_payment_idempotency(amount, user_id):
     """Property: Same idempotency key returns same result"""
     key = "test_key"
-    
+
     result1 = execute_node('payment_handler_v1', {
         'amount': amount,
         'user_id': user_id,
         'idempotency_key': key
     })
-    
+
     result2 = execute_node('payment_handler_v1', {
         'amount': amount,
         'user_id': user_id,
         'idempotency_key': key
     })
-    
+
     assert result1 == result2
 ```
 
@@ -563,21 +563,21 @@ confidence = self._calculate_wilson_score(metrics)
 def execute_node(node_id: str, inputs: Dict[str, Any]) -> Result:
     """
     Execute a semantic node with given inputs.
-    
+
     This function handles the dual-path execution model, routing
     to either Python or direct runtime based on confidence scores.
-    
+
     Args:
         node_id: Unique identifier (e.g., 'payment_handler_v1')
         inputs: Input parameters matching node's input schema
-        
+
     Returns:
         Result object containing either success output or error
-        
+
     Raises:
         ValidationError: If inputs don't match schema
         NodeNotFoundError: If node_id doesn't exist
-        
+
     Example:
         >>> result = execute_node('hello_world_v1', {'name': 'Alice'})
         >>> print(result.message)
@@ -702,4 +702,3 @@ Contributors are recognized in:
 By contributing, you agree that your contributions will be licensed under the MIT License.
 
 Thank you for contributing to the future of software development!
-

@@ -70,4 +70,3 @@ testing:
       expected_output:
         success: true
         message: "Hello, Bob! Welcome to Vesper."
-

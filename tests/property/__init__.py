@@ -55,7 +55,7 @@ flow:
     operation: arithmetic
     expression: "a + b"
     output: result
-  
+
   - step: return_result
     operation: return
     return_success:
@@ -121,12 +121,12 @@ flow:
       return_error:
         error_code: invalid
         message: "Name required"
-  
+
   - step: greet
     operation: string_template
     template: "Hello, {name}!"
     output: message
-  
+
   - step: return_result
     operation: return
     return_success:
@@ -157,4 +157,3 @@ flow:
         """Property: empty name always fails"""
         result = self.runtime.execute_sync("greet_v1", {"name": ""})
         assert not result.success or result.error is not None
-

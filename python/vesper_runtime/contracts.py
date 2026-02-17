@@ -6,15 +6,16 @@ from __future__ import annotations
 
 import operator
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 
 class ContractViolation(Exception):
     """Base exception for contract violations."""
 
     def __init__(
-        self, message: str, contract: str, values: Optional[dict[str, Any]] = None
+        self, message: str, contract: str, values: dict[str, Any] | None = None
     ) -> None:
         super().__init__(message)
         self.contract = contract
@@ -23,16 +24,19 @@ class ContractViolation(Exception):
 
 class PreconditionViolation(ContractViolation):
     """Raised when a precondition is violated."""
+
     pass
 
 
 class PostconditionViolation(ContractViolation):
     """Raised when a postcondition is violated."""
+
     pass
 
 
 class InvariantViolation(ContractViolation):
     """Raised when an invariant is violated."""
+
     pass
 
 
@@ -42,8 +46,8 @@ class ContractResult:
 
     passed: bool
     contract: str
-    message: Optional[str] = None
-    values: Optional[dict[str, Any]] = None
+    message: str | None = None
+    values: dict[str, Any] | None = None
 
 
 class ContractChecker:
@@ -64,7 +68,9 @@ class ContractChecker:
     def register_function(self, name: str, func: Callable[..., Any]) -> None:
         self._custom_functions[name] = func
 
-    def check_precondition(self, contract: str, inputs: dict[str, Any]) -> ContractResult:
+    def check_precondition(
+        self, contract: str, inputs: dict[str, Any]
+    ) -> ContractResult:
         try:
             result = self._evaluate(contract, inputs)
             if result:
@@ -89,7 +95,7 @@ class ContractChecker:
         contract: str,
         inputs: dict[str, Any],
         outputs: dict[str, Any],
-        old_values: Optional[dict[str, Any]] = None,
+        old_values: dict[str, Any] | None = None,
     ) -> ContractResult:
         context = {**inputs, **outputs}
         if old_values:
@@ -133,7 +139,9 @@ class ContractChecker:
                 values=state,
             )
 
-    def enforce_preconditions(self, contracts: list[str], inputs: dict[str, Any]) -> None:
+    def enforce_preconditions(
+        self, contracts: list[str], inputs: dict[str, Any]
+    ) -> None:
         for contract in contracts:
             result = self.check_precondition(contract, inputs)
             if not result.passed:
@@ -148,7 +156,7 @@ class ContractChecker:
         contracts: list[str],
         inputs: dict[str, Any],
         outputs: dict[str, Any],
-        old_values: Optional[dict[str, Any]] = None,
+        old_values: dict[str, Any] | None = None,
     ) -> None:
         for contract in contracts:
             result = self.check_postcondition(contract, inputs, outputs, old_values)
@@ -164,11 +172,15 @@ class ContractChecker:
 
         if " OR " in contract:
             parts = contract.split(" OR ", 1)
-            return self._evaluate(parts[0], context) or self._evaluate(parts[1], context)
+            return self._evaluate(parts[0], context) or self._evaluate(
+                parts[1], context
+            )
 
         if " AND " in contract:
             parts = contract.split(" AND ", 1)
-            return self._evaluate(parts[0], context) and self._evaluate(parts[1], context)
+            return self._evaluate(parts[0], context) and self._evaluate(
+                parts[1], context
+            )
 
         if contract.startswith("NOT "):
             return not self._evaluate(contract[4:], context)
@@ -224,11 +236,14 @@ class ContractChecker:
                 func_name = match.group(1)
                 args_str = match.group(2)
                 if func_name in self._custom_functions:
-                    args = [self._parse_value(a.strip(), context) for a in args_str.split(",")]
+                    args = [
+                        self._parse_value(a.strip(), context)
+                        for a in args_str.split(",")
+                    ]
                     return self._custom_functions[func_name](*args)
 
         parts = path.split(".")
-        value = context
+        value: Any = context
 
         for part in parts:
             if isinstance(value, dict):
@@ -268,7 +283,7 @@ class ContractChecker:
         return self._get_value(token, context)
 
     def _parse_list(self, list_str: str) -> list[Any]:
-        items = []
+        items: list[Any] = []
         for item in list_str.split(","):
             item = item.strip()
             if (item.startswith("'") and item.endswith("'")) or (
@@ -284,4 +299,3 @@ class ContractChecker:
                     except ValueError:
                         items.append(item)
         return items
-

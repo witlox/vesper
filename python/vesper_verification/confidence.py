@@ -11,7 +11,6 @@ from __future__ import annotations
 import math
 import time
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -105,11 +104,11 @@ class ConfidenceTracker:
 
         denominator = 1 + z**2 / n
         center = (p + z**2 / (2 * n)) / denominator
-        margin = z * math.sqrt((p * (1 - p) / n + z**2 / (4 * n**2))) / denominator
+        margin = z * math.sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) / denominator
 
         return max(0.0, center - margin)
 
-    def get_metrics(self, node_id: str) -> Optional[RuntimeMetrics]:
+    def get_metrics(self, node_id: str) -> RuntimeMetrics | None:
         """Get raw metrics for a node."""
         return self.metrics.get(node_id)
 
@@ -149,7 +148,7 @@ class ConfidenceTracker:
         }
 
     @classmethod
-    def deserialize(cls, data: dict) -> "ConfidenceTracker":
+    def deserialize(cls, data: dict) -> ConfidenceTracker:
         """Deserialize tracker state from persistence."""
         tracker = cls()
         for node_id, values in data.items():
@@ -162,4 +161,3 @@ class ConfidenceTracker:
                 last_updated=values["last_updated"],
             )
         return tracker
-

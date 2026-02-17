@@ -49,4 +49,3 @@ jobs:
         run: |
           mypy python/vesper/ --ignore-missing-imports
         continue-on-error: true  # Type errors shouldn't block CI initially
-

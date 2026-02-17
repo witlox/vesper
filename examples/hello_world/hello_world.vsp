@@ -92,4 +92,3 @@ documentation:
         runtime.load_node("examples/hello_world/hello_world.vsp")
         result = runtime.execute_sync("hello_world_v1", {"name": "World"})
         print(result.data)  # Hello, World! Welcome to Vesper.
-

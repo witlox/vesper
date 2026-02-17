@@ -168,12 +168,12 @@ contracts:
     - "amount > 0"
     - "user.authenticated"
     - "order.status == 'pending'"
-  
+
   postconditions:
     - "transaction.recorded OR error.logged"
     - "order.status IN ['paid', 'payment_failed']"
     - "user.balance == old(user.balance) - amount OR error.occurred"
-  
+
   invariants:
     - "SUM(all_user_balances) == total_system_balance"
     - "all(user.balance >= 0)"
@@ -204,25 +204,25 @@ contracts:
 async def execute_semantic_node(node_id: str, inputs: dict) -> Result:
     # 1. Load semantic IR
     vesper_node = load_node(node_id)
-    
+
     # 2. Determine execution mode
     mode = migration_controller.get_execution_mode(node_id)
-    
+
     # 3. Route based on mode
     if mode == ExecutionMode.PYTHON_ONLY:
         return await python_runtime.execute(vesper_node, inputs)
-    
+
     elif mode == ExecutionMode.SHADOW_DIRECT:
         # Python runs in foreground
         python_result = await python_runtime.execute(vesper_node, inputs)
-        
+
         # Direct runs in background (async)
         asyncio.create_task(
             direct_runtime.execute(vesper_node, inputs)
         )
-        
+
         return python_result
-    
+
     elif mode == ExecutionMode.CANARY_DIRECT:
         # Route 5% to direct, 95% to Python
         if hash(str(inputs)) % 100 < 5:
@@ -233,19 +233,19 @@ async def execute_semantic_node(node_id: str, inputs: dict) -> Result:
                 return await python_runtime.execute(vesper_node, inputs)
         else:
             return await python_runtime.execute(vesper_node, inputs)
-    
+
     elif mode == ExecutionMode.DUAL_VERIFY:
         # Execute both, compare, return Python
         python_result, direct_result = await asyncio.gather(
             python_runtime.execute(vesper_node, inputs),
             direct_runtime.execute(vesper_node, inputs)
         )
-        
+
         if python_result != direct_result:
             metrics.record_divergence(node_id, inputs, python_result, direct_result)
-        
+
         return python_result
-    
+
     elif mode == ExecutionMode.DIRECT_ONLY:
         # Direct runtime with 1% sampling for verification
         if random.random() < 0.01:
@@ -264,17 +264,17 @@ async def execute_semantic_node(node_id: str, inputs: dict) -> Result:
 class DifferentialTester:
     def test_node(self, node_id: str, num_tests: int = 10000):
         """Generate random inputs, compare outputs"""
-        
+
         vesper_node = load_node(node_id)
-        
+
         for i in range(num_tests):
             # Generate valid random input
             inputs = self.generate_random_input(vesper_node.inputs)
-            
+
             # Execute both runtimes
             python_output = python_runtime.execute(node_id, inputs)
             direct_output = direct_runtime.execute(node_id, inputs)
-            
+
             # Compare
             if python_output != direct_output:
                 self.report_divergence({
@@ -294,29 +294,29 @@ Confidence is calculated using Wilson score interval:
 def calculate_confidence(metrics: RuntimeMetrics) -> float:
     """
     Calculate confidence that direct runtime is correct
-    
+
     Uses Wilson score confidence interval for binomial proportion:
     - Accounts for sample size
     - Provides conservative lower bound
     - Statistical rigor over simple accuracy
     """
-    
+
     if metrics.total_executions < MIN_SAMPLE_SIZE:
         return 0.0
-    
+
     successes = metrics.total_executions - metrics.divergences
-    
+
     # Wilson score with 99.9% confidence
     z = 3.29  # z-score for 99.9% confidence
     p = successes / metrics.total_executions
-    
+
     denominator = 1 + z**2 / metrics.total_executions
     center = (p + z**2 / (2 * metrics.total_executions)) / denominator
     margin = z * sqrt(
-        (p * (1-p) / metrics.total_executions + 
+        (p * (1-p) / metrics.total_executions +
          z**2 / (4 * metrics.total_executions**2))
     ) / denominator
-    
+
     return max(0, center - margin)  # Lower bound
 ```
 
@@ -339,22 +339,22 @@ from hypothesis import given, strategies as st
 )
 def test_payment_idempotency(amount, user_id):
     """Property: Same payment request twice = same transaction"""
-    
+
     idempotency_key = "test_key_123"
-    
+
     # Execute twice with same key
     result1 = execute_node('payment_handler', {
         'amount': amount,
         'user_id': user_id,
         'idempotency_key': idempotency_key
     })
-    
+
     result2 = execute_node('payment_handler', {
         'amount': amount,
         'user_id': user_id,
         'idempotency_key': idempotency_key
     })
-    
+
     # Property: Results are identical
     assert result1 == result2
     assert result1.transaction_id == result2.transaction_id
@@ -585,9 +585,9 @@ impl HotPathDetector {
     fn should_compile(&mut self, node_id: &str) -> bool {
         let count = self.call_counts.entry(node_id.to_string())
             .or_insert(0);
-        
+
         *count += 1;
-        
+
         *count >= self.compilation_threshold
     }
 }
@@ -596,13 +596,13 @@ impl JITCompiler {
     fn compile_node(&self, node: &SemanticNode) -> CompiledCode {
         // Generate LLVM IR from semantic node
         let llvm_ir = self.generate_llvm_ir(node);
-        
+
         // Optimize
         let optimized = self.optimize_llvm_ir(llvm_ir);
-        
+
         // Compile to native
         let native_code = self.compile_to_native(optimized);
-        
+
         native_code
     }
 }
@@ -624,29 +624,29 @@ async fn execute_with_caching(node_id: &str, inputs: &Inputs) -> Result<Output> 
             return Ok(cached);
         }
     }
-    
+
     // Check JIT cache
     if let Some(compiled) = jit_cache.get(node_id) {
         let result = compiled.execute(inputs)?;
-        
+
         if node.is_idempotent() {
             result_cache.set(node_id, inputs, &result).await;
         }
-        
+
         return Ok(result);
     }
-    
+
     // Check semantic cache
     let vesper_node = semantic_cache.get_or_load(node_id).await?;
-    
+
     // Execute and potentially compile
     let result = self.execute_semantic(vesper_node, inputs)?;
-    
+
     if self.hot_path_detector.should_compile(node_id) {
         let compiled = self.jit_compiler.compile(vesper_node);
         jit_cache.insert(node_id, compiled);
     }
-    
+
     Ok(result)
 }
 ```
@@ -664,7 +664,7 @@ security:
     - database.write.transactions
     - network.http_client.stripe.com
     - secrets.read.stripe_api_key
-  
+
   denied_capabilities:
     - filesystem.write
     - network.http_server
@@ -685,10 +685,10 @@ fn execute_with_capabilities(
             return Err(SecurityError::MissingCapability(required_cap.clone()));
         }
     }
-    
+
     // Create sandboxed execution environment
     let sandbox = Sandbox::new(granted_caps);
-    
+
     // Execute in sandbox
     sandbox.execute(node, inputs)
 }
@@ -723,18 +723,18 @@ security:
 class MetricsCollector:
     def record_execution(self, node_id: str, execution: Execution):
         """Record execution metrics"""
-        
-        self.metrics.counter('sir.executions.total', 
+
+        self.metrics.counter('sir.executions.total',
                             labels={'node': node_id, 'path': execution.path})
-        
+
         self.metrics.histogram('sir.execution.duration_ms',
                               execution.duration_ms,
                               labels={'node': node_id, 'path': execution.path})
-        
+
         if execution.error:
             self.metrics.counter('sir.executions.errors',
                                 labels={'node': node_id, 'error': execution.error_type})
-        
+
         if execution.divergence:
             self.metrics.counter('sir.divergences',
                                 labels={'node': node_id})
@@ -766,16 +766,16 @@ def execute_node(node_id: str, inputs: dict) -> Result:
             "sir.intent": node.intent
         }
     ) as span:
-        
+
         result = runtime.execute(node_id, inputs)
-        
+
         span.set_attribute("sir.execution_path", result.path_used)
         span.set_attribute("sir.duration_ms", result.duration_ms)
-        
+
         if result.divergence:
             span.set_attribute("sir.divergence", True)
             span.add_event("divergence_detected")
-        
+
         return result
 ```
 

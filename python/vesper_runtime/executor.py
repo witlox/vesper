@@ -10,7 +10,7 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from vesper_verification.confidence import ConfidenceTracker
@@ -33,7 +33,7 @@ class ExecutionResult:
     path_used: str
     trace_id: str
     success: bool
-    error: Optional[Exception] = None
+    error: Exception | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -51,9 +51,9 @@ class DualExecutionResult:
     """Result from executing both paths."""
 
     python_result: ExecutionResult
-    direct_result: Optional[ExecutionResult]
+    direct_result: ExecutionResult | None
     diverged: bool
-    divergence_details: Optional[dict[str, Any]] = None
+    divergence_details: dict[str, Any] | None = None
 
     @property
     def primary_result(self) -> ExecutionResult:
@@ -63,8 +63,7 @@ class DualExecutionResult:
 class RuntimeProtocol(Protocol):
     """Protocol for runtime implementations."""
 
-    async def execute(self, node_id: str, inputs: dict[str, Any]) -> dict[str, Any]:
-        ...
+    async def execute(self, node_id: str, inputs: dict[str, Any]) -> dict[str, Any]: ...
 
 
 class PythonRuntime:
@@ -125,12 +124,12 @@ class ExecutionOrchestrator:
     def __init__(
         self,
         python_runtime: RuntimeProtocol,
-        direct_runtime: Optional[RuntimeProtocol] = None,
-        router: Optional["ExecutionRouter"] = None,
-        confidence_tracker: Optional["ConfidenceTracker"] = None,
-        metrics_collector: Optional["MetricsCollector"] = None,
-        shadow_executor: Optional["ShadowExecutor"] = None,
-        comparator: Optional["OutputComparator"] = None,
+        direct_runtime: RuntimeProtocol | None = None,
+        router: ExecutionRouter | None = None,
+        confidence_tracker: ConfidenceTracker | None = None,
+        metrics_collector: MetricsCollector | None = None,
+        shadow_executor: ShadowExecutor | None = None,
+        comparator: OutputComparator | None = None,
     ) -> None:
         self.python_runtime = python_runtime
         self.direct_runtime = direct_runtime
@@ -144,7 +143,7 @@ class ExecutionOrchestrator:
         self,
         node_id: str,
         inputs: dict[str, Any],
-        mode: Optional[ExecutionMode] = None,
+        mode: ExecutionMode | None = None,
     ) -> ExecutionResult:
         """Execute a semantic node in the appropriate mode."""
         trace_id = str(uuid.uuid4())
@@ -156,7 +155,9 @@ class ExecutionOrchestrator:
         else:
             decision = RoutingDecision.python_only("No router configured")
 
-        logger.info(f"Executing {node_id} in mode {decision.mode.value}: {decision.reason}")
+        logger.info(
+            f"Executing {node_id} in mode {decision.mode.value}: {decision.reason}"
+        )
 
         try:
             if decision.mode == ExecutionMode.PYTHON_ONLY:
@@ -164,12 +165,16 @@ class ExecutionOrchestrator:
             elif decision.mode == ExecutionMode.SHADOW_DIRECT:
                 return await self._execute_shadow_mode(node_id, inputs, trace_id)
             elif decision.mode == ExecutionMode.CANARY_DIRECT:
-                return await self._execute_canary_mode(node_id, inputs, trace_id, decision)
+                return await self._execute_canary_mode(
+                    node_id, inputs, trace_id, decision
+                )
             elif decision.mode == ExecutionMode.DUAL_VERIFY:
                 dual_result = await self._execute_dual_verify(node_id, inputs, trace_id)
                 return dual_result.python_result
             elif decision.mode == ExecutionMode.DIRECT_ONLY:
-                return await self._execute_direct_only(node_id, inputs, trace_id, decision)
+                return await self._execute_direct_only(
+                    node_id, inputs, trace_id, decision
+                )
             else:
                 return await self._execute_python_only(node_id, inputs, trace_id)
         except Exception as e:
@@ -234,6 +239,7 @@ class ExecutionOrchestrator:
         python_result = await self._execute_python_only(node_id, inputs, trace_id)
         if self.shadow_executor and self.direct_runtime:
             from vesper_verification.shadow_mode import ExecutionResult as ShadowResult
+
             shadow_result = ShadowResult(
                 output=python_result.output,
                 execution_time_ms=python_result.execution_time_ms,
@@ -245,7 +251,11 @@ class ExecutionOrchestrator:
         return python_result
 
     async def _execute_canary_mode(
-        self, node_id: str, inputs: dict[str, Any], trace_id: str, decision: RoutingDecision
+        self,
+        node_id: str,
+        inputs: dict[str, Any],
+        trace_id: str,
+        decision: RoutingDecision,
     ) -> ExecutionResult:
         if decision.use_direct and self.direct_runtime:
             try:
@@ -294,21 +304,34 @@ class ExecutionOrchestrator:
             divergence_details = None
 
             if self.comparator:
-                divergence_details = self.comparator.compare(python_output, direct_output)
+                divergence_details = self.comparator.compare(
+                    python_output, direct_output
+                )
                 diverged = divergence_details is not None
             else:
                 diverged = python_output != direct_output
                 if diverged:
-                    divergence_details = {"python": python_output, "direct": direct_output}
+                    divergence_details = {
+                        "python": python_output,
+                        "direct": direct_output,
+                    }
 
             if self.confidence_tracker:
-                self.confidence_tracker.record_execution(node_id=node_id, diverged=diverged)
+                self.confidence_tracker.record_execution(
+                    node_id=node_id, diverged=diverged
+                )
 
-            self._record_metrics(node_id, "python", execution_time_ms, True, diverged=diverged)
-            self._record_metrics(node_id, "direct", execution_time_ms, True, diverged=diverged)
+            self._record_metrics(
+                node_id, "python", execution_time_ms, True, diverged=diverged
+            )
+            self._record_metrics(
+                node_id, "direct", execution_time_ms, True, diverged=diverged
+            )
 
             if diverged:
-                logger.warning(f"Divergence in dual verify for {node_id}: {divergence_details}")
+                logger.warning(
+                    f"Divergence in dual verify for {node_id}: {divergence_details}"
+                )
 
             return DualExecutionResult(
                 python_result=python_result,
@@ -327,7 +350,11 @@ class ExecutionOrchestrator:
             )
 
     async def _execute_direct_only(
-        self, node_id: str, inputs: dict[str, Any], trace_id: str, decision: RoutingDecision
+        self,
+        node_id: str,
+        inputs: dict[str, Any],
+        trace_id: str,
+        decision: RoutingDecision,
     ) -> ExecutionResult:
         if not self.direct_runtime:
             return await self._execute_python_only(node_id, inputs, trace_id)
@@ -371,7 +398,7 @@ class ExecutionOrchestrator:
         duration_ms: float,
         success: bool,
         diverged: bool = False,
-        error: Optional[Exception] = None,
+        error: Exception | None = None,
     ) -> None:
         if self.metrics_collector:
             self.metrics_collector.record_execution(
@@ -389,4 +416,3 @@ class ExecutionOrchestrator:
         """Explicitly execute dual verification."""
         trace_id = str(uuid.uuid4())
         return await self._execute_dual_verify(node_id, inputs, trace_id)
-

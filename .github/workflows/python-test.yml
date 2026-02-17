@@ -64,4 +64,3 @@ jobs:
           name: python-coverage-report
           path: htmlcov/
           retention-days: 7
-

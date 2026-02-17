@@ -8,9 +8,9 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class DivergenceRecord:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "DivergenceRecord":
+    def from_dict(cls, data: dict[str, Any]) -> DivergenceRecord:
         """Create from dictionary."""
         return cls(
             id=data["id"],
@@ -64,7 +64,7 @@ class DivergenceDatabase:
 
     def __init__(
         self,
-        storage_path: Optional[Path] = None,
+        storage_path: Path | None = None,
         max_records_per_node: int = 1000,
     ) -> None:
         self.storage_path = storage_path
@@ -85,7 +85,7 @@ class DivergenceDatabase:
             records.append(record)
 
             if len(records) > self.max_records_per_node:
-                self._records[record.node_id] = records[-self.max_records_per_node:]
+                self._records[record.node_id] = records[-self.max_records_per_node :]
 
             if self.storage_path:
                 self._save_to_file()
@@ -96,17 +96,17 @@ class DivergenceDatabase:
         """Get divergences for a specific node."""
         async with self._lock:
             records = self._records.get(node_id, [])
-            return list(reversed(records))[offset:offset + limit]
+            return list(reversed(records))[offset : offset + limit]
 
     async def get_by_time_range(
         self,
         start_time: datetime,
-        end_time: Optional[datetime] = None,
-        node_id: Optional[str] = None,
+        end_time: datetime | None = None,
+        node_id: str | None = None,
     ) -> list[DivergenceRecord]:
         """Get divergences within a time range."""
         if end_time is None:
-            end_time = datetime.now(timezone.utc)
+            end_time = datetime.now(UTC)
 
         start_iso = start_time.isoformat()
         end_iso = end_time.isoformat()
@@ -122,7 +122,7 @@ class DivergenceDatabase:
 
         return sorted(result, key=lambda r: r.timestamp, reverse=True)
 
-    async def get_stats(self, node_id: Optional[str] = None) -> dict[str, Any]:
+    async def get_stats(self, node_id: str | None = None) -> dict[str, Any]:
         """Get statistics about stored divergences."""
         async with self._lock:
             if node_id:
@@ -134,7 +134,9 @@ class DivergenceDatabase:
                     all_stats[nid] = self._compute_stats(records, nid)
                 return all_stats
 
-    def _compute_stats(self, records: list[DivergenceRecord], node_id: str) -> dict[str, Any]:
+    def _compute_stats(
+        self, records: list[DivergenceRecord], node_id: str
+    ) -> dict[str, Any]:
         """Compute statistics for a list of records."""
         if not records:
             return {
@@ -154,18 +156,22 @@ class DivergenceDatabase:
                 diff_type = diff.get("type", "unknown")
                 diff_types[diff_type] = diff_types.get(diff_type, 0) + 1
 
-        sorted_diff_types = sorted(diff_types.items(), key=lambda x: x[1], reverse=True)[:5]
+        sorted_diff_types = sorted(
+            diff_types.items(), key=lambda x: x[1], reverse=True
+        )[:5]
 
         return {
             "node_id": node_id,
             "total_divergences": len(records),
             "by_mode": by_mode,
-            "most_common_diff_types": [{"type": t, "count": c} for t, c in sorted_diff_types],
+            "most_common_diff_types": [
+                {"type": t, "count": c} for t, c in sorted_diff_types
+            ],
             "oldest": records[0].timestamp if records else None,
             "newest": records[-1].timestamp if records else None,
         }
 
-    async def clear(self, node_id: Optional[str] = None) -> int:
+    async def clear(self, node_id: str | None = None) -> int:
         """Clear divergence records."""
         async with self._lock:
             if node_id:
@@ -187,8 +193,12 @@ class DivergenceDatabase:
             with open(self.storage_path) as f:
                 data = json.load(f)
             for node_id, records_data in data.items():
-                self._records[node_id] = [DivergenceRecord.from_dict(r) for r in records_data]
-            logger.info(f"Loaded {sum(len(r) for r in self._records.values())} divergence records")
+                self._records[node_id] = [
+                    DivergenceRecord.from_dict(r) for r in records_data
+                ]
+            logger.info(
+                f"Loaded {sum(len(r) for r in self._records.values())} divergence records"
+            )
         except Exception as e:
             logger.error(f"Failed to load divergence records: {e}")
 
@@ -198,9 +208,11 @@ class DivergenceDatabase:
             return
         try:
             self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-            data = {node_id: [r.to_dict() for r in records] for node_id, records in self._records.items()}
+            data = {
+                node_id: [r.to_dict() for r in records]
+                for node_id, records in self._records.items()
+            }
             with open(self.storage_path, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save divergence records: {e}")
-

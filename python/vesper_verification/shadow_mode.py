@@ -8,8 +8,8 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from vesper_verification.confidence import ConfidenceTracker
@@ -37,7 +37,7 @@ class ExecutionResult:
     path_used: str
     trace_id: str
     success: bool
-    error: Optional[Exception] = None
+    error: Exception | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -65,10 +65,10 @@ class ShadowExecutor:
     def __init__(
         self,
         direct_runtime: RuntimeProtocol,
-        comparator: "OutputComparator",
-        confidence_tracker: "ConfidenceTracker",
-        metrics_collector: Optional["MetricsCollector"] = None,
-        divergence_database: Optional["DivergenceDatabase"] = None,
+        comparator: OutputComparator,
+        confidence_tracker: ConfidenceTracker,
+        metrics_collector: MetricsCollector | None = None,
+        divergence_database: DivergenceDatabase | None = None,
     ) -> None:
         self.direct_runtime = direct_runtime
         self.comparator = comparator
@@ -133,13 +133,18 @@ class ShadowExecutor:
                     diverged=diverged,
                 )
 
-            if diverged:
+            if diverged and diff is not None:
                 logger.warning(
                     f"Shadow divergence detected for {node_id}: {diff.get('count', 0)} differences"
                 )
                 if self.divergence_database:
                     await self._record_divergence(
-                        node_id, inputs, python_result.output, direct_output, diff, trace_id
+                        node_id,
+                        inputs,
+                        python_result.output,
+                        direct_output,
+                        diff,
+                        trace_id,
                     )
 
         except Exception as e:
@@ -183,12 +188,12 @@ class ShadowExecutor:
                 python_output=python_output,
                 direct_output=direct_output,
                 diff=diff,
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 mode="shadow",
             )
             await self.divergence_database.store(record)
 
-    async def wait_for_pending(self, timeout: Optional[float] = None) -> int:
+    async def wait_for_pending(self, timeout: float | None = None) -> int:
         """Wait for all pending shadow executions to complete."""
         if not self._pending_tasks:
             return 0
@@ -200,8 +205,10 @@ class ShadowExecutor:
                 asyncio.gather(*self._pending_tasks, return_exceptions=True),
                 timeout=timeout,
             )
-        except asyncio.TimeoutError:
-            logger.warning(f"Timeout waiting for {len(self._pending_tasks)} shadow tasks")
+        except TimeoutError:
+            logger.warning(
+                f"Timeout waiting for {len(self._pending_tasks)} shadow tasks"
+            )
 
         return pending_count
 
@@ -209,4 +216,3 @@ class ShadowExecutor:
     def pending_count(self) -> int:
         """Number of pending shadow executions."""
         return len(self._pending_tasks)
-

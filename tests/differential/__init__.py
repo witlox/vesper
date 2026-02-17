@@ -387,4 +387,3 @@ class PropertyTester:
                 })
 
         return len(failures) == 0, failures
-

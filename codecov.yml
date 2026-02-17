@@ -50,4 +50,3 @@ ignore:
   - "tests/**/*"
   - "**/__pycache__/**"
   - "**/target/**"
-

@@ -7,8 +7,8 @@ from __future__ import annotations
 import statistics
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any, Optional
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -20,8 +20,8 @@ class ExecutionMetrics:
     path: str
     duration_ms: float
     success: bool
-    diverged: Optional[bool] = None
-    error_type: Optional[str] = None
+    diverged: bool | None = None
+    error_type: str | None = None
 
 
 @dataclass
@@ -68,8 +68,8 @@ class MetricsCollector:
         path: str,
         duration_ms: float,
         success: bool,
-        diverged: Optional[bool] = None,
-        error: Optional[Exception] = None,
+        diverged: bool | None = None,
+        error: Exception | None = None,
     ) -> None:
         """Record a single execution."""
         metrics = ExecutionMetrics(
@@ -86,7 +86,7 @@ class MetricsCollector:
         executions.append(metrics)
 
         if len(executions) > self.MAX_EXECUTIONS_PER_NODE:
-            self._executions[node_id] = executions[-self.MAX_EXECUTIONS_PER_NODE:]
+            self._executions[node_id] = executions[-self.MAX_EXECUTIONS_PER_NODE :]
 
         self._update_aggregate(node_id, metrics)
 
@@ -137,9 +137,13 @@ class MetricsCollector:
 
     def get_all_aggregates(self) -> dict[str, AggregateMetrics]:
         """Get aggregate metrics for all nodes."""
-        return {node_id: self.get_aggregate_metrics(node_id) for node_id in self._aggregates}
+        return {
+            node_id: self.get_aggregate_metrics(node_id) for node_id in self._aggregates
+        }
 
-    def get_recent_executions(self, node_id: str, limit: int = 100) -> list[ExecutionMetrics]:
+    def get_recent_executions(
+        self, node_id: str, limit: int = 100
+    ) -> list[ExecutionMetrics]:
         """Get recent executions for a node."""
         executions = self._executions.get(node_id, [])
         return list(reversed(executions[-limit:]))
@@ -152,8 +156,12 @@ class MetricsCollector:
         lines.append("# TYPE vesper_executions_total counter")
 
         for node_id, agg in self._aggregates.items():
-            lines.append(f'vesper_executions_total{{node_id="{node_id}",path="python"}} {agg.python_executions}')
-            lines.append(f'vesper_executions_total{{node_id="{node_id}",path="direct"}} {agg.direct_executions}')
+            lines.append(
+                f'vesper_executions_total{{node_id="{node_id}",path="python"}} {agg.python_executions}'
+            )
+            lines.append(
+                f'vesper_executions_total{{node_id="{node_id}",path="direct"}} {agg.direct_executions}'
+            )
 
         lines.append("")
         lines.append("# HELP vesper_errors_total Total number of errors")
@@ -167,7 +175,9 @@ class MetricsCollector:
         lines.append("# TYPE vesper_divergences_total counter")
 
         for node_id, agg in self._aggregates.items():
-            lines.append(f'vesper_divergences_total{{node_id="{node_id}"}} {agg.divergences}')
+            lines.append(
+                f'vesper_divergences_total{{node_id="{node_id}"}} {agg.divergences}'
+            )
 
         return "\n".join(lines)
 
@@ -189,12 +199,14 @@ class MetricsCollector:
                     "p95_latency_ms": agg.p95_latency_ms,
                     "p99_latency_ms": agg.p99_latency_ms,
                 }
-                for node_id, agg in ((nid, self.get_aggregate_metrics(nid)) for nid in self._aggregates)
+                for node_id, agg in (
+                    (nid, self.get_aggregate_metrics(nid)) for nid in self._aggregates
+                )
             },
             "timestamp": time.time(),
         }
 
-    def reset(self, node_id: Optional[str] = None) -> None:
+    def reset(self, node_id: str | None = None) -> None:
         """Reset metrics."""
         if node_id:
             self._executions.pop(node_id, None)
@@ -202,4 +214,3 @@ class MetricsCollector:
         else:
             self._executions.clear()
             self._aggregates.clear()
-

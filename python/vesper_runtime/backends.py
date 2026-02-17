@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -14,8 +14,8 @@ class OperationResult:
     """Result of a backend operation."""
 
     success: bool
-    data: Optional[Any] = None
-    error: Optional[str] = None
+    data: Any | None = None
+    error: str | None = None
 
 
 class Backend(ABC):
@@ -47,13 +47,15 @@ class InMemoryBackend(Backend):
             elif operation == "exists":
                 return self._exists(params)
             else:
-                return OperationResult(success=False, error=f"Unknown operation: {operation}")
+                return OperationResult(
+                    success=False, error=f"Unknown operation: {operation}"
+                )
         except Exception as e:
             return OperationResult(success=False, error=str(e))
 
     def _get(self, params: dict[str, Any]) -> OperationResult:
         collection = params.get("collection", "default")
-        key = params.get("key")
+        key: str = params.get("key", "")
         if collection not in self._data:
             return OperationResult(success=True, data=None)
         data = self._data[collection].get(key)
@@ -61,7 +63,7 @@ class InMemoryBackend(Backend):
 
     def _set(self, params: dict[str, Any]) -> OperationResult:
         collection = params.get("collection", "default")
-        key = params.get("key")
+        key: str = params.get("key", "")
         value = params.get("value")
         if collection not in self._data:
             self._data[collection] = {}
@@ -70,7 +72,7 @@ class InMemoryBackend(Backend):
 
     def _delete(self, params: dict[str, Any]) -> OperationResult:
         collection = params.get("collection", "default")
-        key = params.get("key")
+        key: str = params.get("key", "")
         if collection in self._data and key in self._data[collection]:
             del self._data[collection][key]
         return OperationResult(success=True)
@@ -120,4 +122,3 @@ class MockBackend(Backend):
     def reset(self) -> None:
         self._responses.clear()
         self._calls.clear()
-

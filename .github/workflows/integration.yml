@@ -51,4 +51,3 @@ jobs:
           vesper compile examples/hello_world/hello_world.vsp --validate-only
           vesper compile examples/payment_handler/payment_handler.vsp -o /tmp/payment_handler.py
           python -c "import ast; ast.parse(open('/tmp/payment_handler.py').read())"
-

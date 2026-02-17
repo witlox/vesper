@@ -1,6 +1,6 @@
 # Vesper Specification v0.1
 
-**Status**: Draft  
+**Status**: Draft
 **Last Updated**: 2025-01-08
 
 ## Overview
@@ -85,7 +85,7 @@ inputs:
       - non_empty
       - pattern: "^ord_[a-zA-Z0-9]{16}$"
     description: Unique order identifier
-    
+
   amount:
     type: decimal
     required: true
@@ -93,13 +93,13 @@ inputs:
       - positive
       - max: 50000.00
     description: Payment amount in USD
-    
+
   user_id:
     type: string
     required: true
     constraints:
       - non_empty
-    
+
   idempotency_key:
     type: string
     required: false
@@ -119,11 +119,11 @@ outputs:
       type: decimal
     timestamp:
       type: timestamp
-      
+
   error:
     error_code:
       type: enum
-      values: [insufficient_funds, invalid_card, expired_card, 
+      values: [insufficient_funds, invalid_card, expired_card,
                network_timeout, service_unavailable, rate_limited]
     message:
       type: string
@@ -150,13 +150,13 @@ contracts:
     - "user.authenticated"
     - "order.status == 'pending'"
     - "user.payment_method_valid"
-    
+
   postconditions:
     - "transaction.recorded OR error.logged"
     - "order.status IN ['paid', 'payment_failed']"
     - "(success AND user.balance >= amount) OR error.occurred"
     - "idempotency: same idempotency_key => same transaction_id"
-    
+
   invariants:
     - "total_balance_never_increases"
     - "FORALL transaction: transaction.amount == order.amount"
@@ -173,7 +173,7 @@ flow:
     on_failure:
       return_error:
         error_code: validation_failed
-        
+
   - step: check_idempotency
     operation: conditional
     condition: "idempotency_key IS NOT NULL"
@@ -185,7 +185,7 @@ flow:
             return_success:
               transaction_id: "{query_result.transaction_id}"
               status: completed
-    
+
   - step: state_transition_1
     operation: state_machine_transition
     state_machine: order_lifecycle
@@ -193,7 +193,7 @@ flow:
     to: processing
     guards:
       - order_not_locked
-      
+
   - step: call_payment_provider
     operation: external_api_call
     provider: stripe
@@ -224,7 +224,7 @@ flow:
       - error_type: rate_limit
         action: backoff
         retry_after: "{response.retry_after}"
-        
+
   - step: record_transaction
     operation: database_write
     table: transactions
@@ -247,7 +247,7 @@ flow:
           method: POST
           parameters:
             charge: "{transaction_id}"
-            
+
   - step: update_user_balance
     operation: database_update
     table: users
@@ -257,13 +257,13 @@ flow:
       balance: "balance - {amount}"
       last_transaction_at: "{current_timestamp()}"
     consistency: strong
-    
+
   - step: state_transition_2
     operation: state_machine_transition
     state_machine: order_lifecycle
     from: processing
     to: paid
-    
+
   - step: emit_event
     operation: event_publish
     event_type: payment_completed
@@ -278,18 +278,18 @@ error_handling:
     action: return_error
     notify: user
     log_level: info
-    
+
   invalid_card:
     action: return_error
     notify: user
     log_level: warning
-    
+
   network_timeout:
     action: retry
     max_retries: 3
     notify: ops_team
     log_level: error
-    
+
   service_unavailable:
     action: circuit_breaker
     threshold: 5
@@ -317,16 +317,16 @@ security:
     - network.http_client.stripe.com
     - secrets.read.stripe_api_key
     - event_bus.publish.payment_events
-    
+
   denied_capabilities:
     - filesystem.write
     - network.http_server
     - exec.shell_command
-    
+
   sensitive_data:
     - user.payment_method
     - transaction.card_details
-    
+
   audit_level: detailed
   compliance:
     - PCI_DSS_v3.2
@@ -345,7 +345,7 @@ observability:
     - name: payment_latency_ms
       type: histogram
       buckets: [50, 100, 200, 500, 1000, 2000]
-      
+
   alerts:
     - condition: "payment_success_rate < 0.95"
       severity: warning
@@ -356,11 +356,11 @@ observability:
     - condition: "payment_success_rate < 0.80"
       severity: critical
       notify: [ops_team, engineering_leads]
-      
+
   tracing:
     enabled: true
     sample_rate: 0.1  # 10% of requests
-    
+
   logging:
     level: info
     structured: true
@@ -372,15 +372,15 @@ testing:
     - property: idempotency
       description: Same idempotency key always returns same result
       strategy: hypothesis
-      
+
     - property: balance_conservation
       description: Total system balance never changes
       invariant: "SUM(all_balances) == constant"
-      
+
     - property: state_machine_correctness
       description: Only valid state transitions occur
       verify: order_lifecycle_states
-      
+
   test_cases:
     - name: successful_payment
       inputs:
@@ -390,7 +390,7 @@ testing:
       expected_output:
         success: true
         status: completed
-        
+
     - name: insufficient_funds
       inputs:
         order_id: ord_test_123456789013
@@ -398,7 +398,7 @@ testing:
         user_id: user_test_123
       expected_output:
         error_code: insufficient_funds
-        
+
     - name: idempotent_retry
       description: Same idempotency key returns same transaction
       steps:
@@ -418,7 +418,7 @@ documentation:
           'amount': 99.99,
           'user_id': 'user_789'
         })
-        
+
     - title: Idempotent payment
       code: |
         result = execute_node('payment_processor_v1', {
@@ -427,12 +427,12 @@ documentation:
           'user_id': 'user_789',
           'idempotency_key': 'unique_key_123'
         })
-        
+
   related_nodes:
     - user_service_v2
     - ledger_service_v3
     - refund_processor_v1
-    
+
   migration_notes: |
     Migrating from payment_processor_v0:
     - Added idempotency_key parameter
@@ -453,7 +453,7 @@ documentation:
 
 #### `type`
 - **Type**: string
-- **Valid values**: 
+- **Valid values**:
   - `function` - Pure computation
   - `http_handler` - HTTP request handler
   - `event_handler` - Event stream processor
@@ -607,16 +607,16 @@ observability:
       type: counter | gauge | histogram
       labels: [label_list]
       buckets: [bucket_values]  # for histogram
-  
+
   alerts:
     - condition: "logical_expression"
       severity: info | warning | error | critical
       notify: [recipient_list]
-  
+
   tracing:
     enabled: boolean
     sample_rate: float  # 0.0 to 1.0
-  
+
   logging:
     level: debug | info | warning | error
     structured: boolean
@@ -632,12 +632,12 @@ testing:
     - property: property_name
       description: string
       strategy: hypothesis | quickcheck
-      
+
   test_cases:
     - name: test_name
       inputs: {input_map}
       expected_output: {output_map}
-      
+
   differential_tests:
     enabled: boolean
     sample_size: integer
@@ -776,29 +776,29 @@ class SIRValidator:
     def validate(self, vesper_file: str) -> ValidationResult:
         # Parse YAML
         node = yaml.safe_load(open(vesper_file))
-        
+
         errors = []
-        
+
         # Required fields
         if 'node_id' not in node:
             errors.append("Missing required field: node_id")
-        
+
         # Type validation
         if 'inputs' in node:
             for name, spec in node['inputs'].items():
                 if 'type' not in spec:
                     errors.append(f"Input {name} missing type")
-        
+
         # Contract validation
         if 'contracts' in node:
             if not self.validate_contracts(node['contracts']):
                 errors.append("Contracts are contradictory")
-        
+
         # Flow validation
         if 'flow' in node:
             if not self.validate_flow_completeness(node['flow']):
                 errors.append("Flow does not cover all paths")
-        
+
         return ValidationResult(
             valid=len(errors) == 0,
             errors=errors
@@ -888,7 +888,7 @@ flow:
   - step: check_auth
     operation: validation
     guards: ["request.has_valid_token"]
-    
+
   - step: query_database
     operation: database_query
     query: "SELECT * FROM users WHERE id = {user_id}"
@@ -930,13 +930,13 @@ flow:
     guards:
       - "event.items.length > 0"
       - "event.total_amount > 0"
-      
+
   - step: reserve_inventory
     operation: call_node
     node_id: inventory_reservation_v2
     parameters:
       items: "{event.items}"
-      
+
   - step: send_confirmation_email
     operation: call_node
     node_id: email_sender_v1
@@ -970,7 +970,7 @@ types:
     base: string
     constraints:
       - pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
-      
+
   USPhoneNumber:
     base: string
     constraints:

@@ -46,4 +46,3 @@ property_tests:
 vesper show data_pipeline.vsp
 vesper compile data_pipeline.vsp
 ```
-

@@ -1,4 +1,3 @@
 """
 Vesper Integration Tests
 """
-

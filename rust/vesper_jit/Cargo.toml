@@ -14,4 +14,3 @@ tracing.workspace = true
 
 # JIT compilation dependencies (placeholder for LLVM)
 # inkwell = "0.2"  # LLVM bindings - uncomment when implementing JIT
-

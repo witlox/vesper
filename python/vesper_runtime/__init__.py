@@ -12,11 +12,11 @@ from vesper_runtime.contracts import (
     PreconditionViolation,
 )
 from vesper_runtime.executor import (
+    DirectRuntime,
     DualExecutionResult,
     ExecutionOrchestrator,
     ExecutionResult,
     PythonRuntime,
-    DirectRuntime,
 )
 from vesper_runtime.tracing import ExecutionSpan, ExecutionTracer, TraceContext
 
@@ -40,4 +40,3 @@ __all__ = [
     "PreconditionViolation",
     "PostconditionViolation",
 ]
-

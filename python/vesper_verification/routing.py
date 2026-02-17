@@ -9,7 +9,7 @@ import json
 import random
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from vesper_verification.confidence import ConfidenceTracker
@@ -37,7 +37,7 @@ class RoutingDecision:
     reason: str
 
     @classmethod
-    def python_only(cls, reason: str = "Default fallback") -> "RoutingDecision":
+    def python_only(cls, reason: str = "Default fallback") -> RoutingDecision:
         return cls(
             mode=ExecutionMode.PYTHON_ONLY,
             use_python=True,
@@ -48,7 +48,7 @@ class RoutingDecision:
         )
 
     @classmethod
-    def shadow(cls, reason: str = "Shadow mode for data collection") -> "RoutingDecision":
+    def shadow(cls, reason: str = "Shadow mode for data collection") -> RoutingDecision:
         return cls(
             mode=ExecutionMode.SHADOW_DIRECT,
             use_python=True,
@@ -59,7 +59,7 @@ class RoutingDecision:
         )
 
     @classmethod
-    def dual_verify(cls, reason: str = "Dual verification") -> "RoutingDecision":
+    def dual_verify(cls, reason: str = "Dual verification") -> RoutingDecision:
         return cls(
             mode=ExecutionMode.DUAL_VERIFY,
             use_python=True,
@@ -70,7 +70,7 @@ class RoutingDecision:
         )
 
     @classmethod
-    def direct_only(cls, reason: str = "High confidence direct") -> "RoutingDecision":
+    def direct_only(cls, reason: str = "High confidence direct") -> RoutingDecision:
         return cls(
             mode=ExecutionMode.DIRECT_ONLY,
             use_python=False,
@@ -99,8 +99,8 @@ class ExecutionRouter:
 
     def __init__(
         self,
-        confidence_tracker: "ConfidenceTracker",
-        config: Optional[RoutingConfig] = None,
+        confidence_tracker: ConfidenceTracker,
+        config: RoutingConfig | None = None,
     ) -> None:
         self.confidence_tracker = confidence_tracker
         self.config = config or RoutingConfig()
@@ -109,7 +109,7 @@ class ExecutionRouter:
         self,
         node_id: str,
         inputs: dict[str, Any],
-        force_mode: Optional[ExecutionMode] = None,
+        force_mode: ExecutionMode | None = None,
     ) -> RoutingDecision:
         """Determine routing for an execution."""
         if force_mode:
@@ -122,7 +122,10 @@ class ExecutionRouter:
         confidence = self.confidence_tracker.get_confidence(node_id)
         metrics = self.confidence_tracker.get_metrics(node_id)
 
-        if metrics is None or metrics.total_executions < self.confidence_tracker.MIN_SAMPLE_SIZE:
+        if (
+            metrics is None
+            or metrics.total_executions < self.confidence_tracker.MIN_SAMPLE_SIZE
+        ):
             return RoutingDecision.python_only(
                 reason=f"Insufficient data ({metrics.total_executions if metrics else 0} executions)"
             )
@@ -203,7 +206,9 @@ class ExecutionRouter:
                 reason=f"Direct with sampling ({self.config.direct_only_sample_rate:.0%} verification)",
             )
         else:
-            return RoutingDecision.direct_only(reason=f"Very high confidence ({confidence:.4f})")
+            return RoutingDecision.direct_only(
+                reason=f"Very high confidence ({confidence:.4f})"
+            )
 
     def set_mode_override(self, node_id: str, mode: ExecutionMode) -> None:
         """Set a mode override for a specific node."""
@@ -218,4 +223,3 @@ def _stable_hash(obj: Any) -> str:
     """Create a stable hash of an object for consistent routing."""
     serialized = json.dumps(obj, sort_keys=True, default=str)
     return hashlib.md5(serialized.encode()).hexdigest()
-
